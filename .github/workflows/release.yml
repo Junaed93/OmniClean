@@ -1,0 +1,71 @@
+name: Build and Publish OmniClean
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release Tag Version (e.g. v2.0.0)'
+        required: true
+        default: 'v2.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compile OmniClean.exe
+        shell: pwsh
+        run: |
+          $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          $wpfDir = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
+
+          Write-Host "Compiling OmniClean.exe using native Windows C# compiler..."
+          & $csc /target:winexe /platform:anycpu /optimize+ /lib:"$wpfDir" `
+            /r:PresentationFramework.dll /r:PresentationCore.dll /r:WindowsBase.dll `
+            /r:System.Xaml.dll /r:System.dll /r:System.Core.dll `
+            /win32icon:"app.ico" /out:"OmniClean.exe" "OmniClean.cs"
+
+          if (!(Test-Path "OmniClean.exe")) {
+            throw "Build failed: OmniClean.exe was not created."
+          }
+
+          Get-Item OmniClean.exe | Select-Object Name, Length, LastWriteTime
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OmniClean-Windows-Binary
+          path: OmniClean.exe
+
+      - name: Determine Release Tag
+        id: release_info
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ github.event.inputs.release_tag }}"
+          } else {
+            $tag = "${{ github.ref_name }}"
+          }
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release & Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: OmniClean ${{ steps.release_info.outputs.tag }}
+          files: OmniClean.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

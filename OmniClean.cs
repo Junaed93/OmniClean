@@ -52,7 +52,7 @@ namespace OmniClean {
     }
 
     class Program {
-        const string CURRENT_VERSION = "v2.0.0";
+        const string CURRENT_VERSION = "v1.0.0";
         const string REPO_URL = "https://github.com/Junaed93/OmniClean";
         const string RELEASES_API = "https://api.github.com/repos/Junaed93/OmniClean/releases/latest";
         const string TASK_NAME = "OmniCleanUniversalAutoClean";
@@ -69,7 +69,6 @@ namespace OmniClean {
         [DllImport("dwmapi.dll")]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
         const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
-        const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
         public class MEMORYSTATUSEX {
@@ -109,12 +108,15 @@ namespace OmniClean {
         static TextBlock txtStatTotal;
         static TextBlock txtSelectedSize;
         static TextBlock txtHardwarePill;
+        static TextBlock txtUptimePill;
         static Button btnClean;
         static Button btnRescan;
         static Button btnOptimizeRam;
         static Button btnSelectAll;
         static Button btnClearAll;
+        static CheckBox chkDryRun;
         static TextBox txtConsole;
+        static Button btnExportLog;
         static StackPanel pnlCategories;
         static Border bannerSuccess;
         static TextBlock txtSuccessMsg;
@@ -231,20 +233,25 @@ namespace OmniClean {
                             <StackPanel Orientation='Horizontal'>
                                 <TextBlock Text='OmniClean' FontSize='18' FontWeight='Bold' Foreground='#FFFFFF'/>
                                 <Border Background='#262054' BorderBrush='#6366F1' BorderThickness='1' CornerRadius='6' Padding='6,2' Margin='8,0,0,0'>
-                                    <TextBlock Text='v2.0 PRO' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
+                                    <TextBlock Text='v1.0.0 PRO' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
                                 </Border>
                             </StackPanel>
                             <TextBlock Text='Universal Windows Performance &amp; Storage Suite' FontSize='11' Foreground='#94A3B8'/>
                         </StackPanel>
                     </StackPanel>
 
-                    <!-- Hardware Specs Pill -->
-                    <Border Grid.Column='1' HorizontalAlignment='Center' VerticalAlignment='Center' Background='#0B1120' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='18' Padding='14,6'>
-                        <StackPanel Orientation='Horizontal'>
-                            <Ellipse Width='8' Height='8' Fill='#10B981' Margin='0,0,8,0'/>
-                            <TextBlock Name='txtHardwarePill' Text='Detecting System Specs...' FontSize='12' Foreground='#94A3B8'/>
-                        </StackPanel>
-                    </Border>
+                    <!-- Hardware Specs & Uptime Pill -->
+                    <StackPanel Grid.Column='1' Orientation='Horizontal' HorizontalAlignment='Center' VerticalAlignment='Center'>
+                        <Border Background='#0B1120' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='18' Padding='14,6' Margin='0,0,8,0'>
+                            <StackPanel Orientation='Horizontal'>
+                                <Ellipse Width='8' Height='8' Fill='#10B981' Margin='0,0,8,0'/>
+                                <TextBlock Name='txtHardwarePill' Text='Detecting Specs...' FontSize='12' Foreground='#94A3B8'/>
+                            </StackPanel>
+                        </Border>
+                        <Border Background='#0B1120' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='18' Padding='12,6'>
+                            <TextBlock Name='txtUptimePill' Text='Uptime: --' FontSize='11' Foreground='#64748B'/>
+                        </Border>
+                    </StackPanel>
 
                     <!-- Window Control Buttons (Minimize, Maximize, Close) -->
                     <StackPanel Grid.Column='2' Orientation='Horizontal' VerticalAlignment='Center'>
@@ -330,10 +337,13 @@ namespace OmniClean {
                                         <RowDefinition Height='Auto'/>
                                         <RowDefinition Height='*'/>
                                     </Grid.RowDefinitions>
-                                    <StackPanel Grid.Row='0' Orientation='Horizontal' Margin='0,0,0,6'>
-                                        <Ellipse Width='7' Height='7' Fill='#06B6D4' Margin='0,0,6,0'/>
-                                        <TextBlock Text='Activity Console' FontSize='11' FontWeight='SemiBold' Foreground='#94A3B8'/>
-                                    </StackPanel>
+                                    <Grid Grid.Row='0' Margin='0,0,0,6'>
+                                        <StackPanel Orientation='Horizontal'>
+                                            <Ellipse Width='7' Height='7' Fill='#06B6D4' Margin='0,0,6,0'/>
+                                            <TextBlock Text='Activity Console' FontSize='11' FontWeight='SemiBold' Foreground='#94A3B8'/>
+                                        </StackPanel>
+                                        <Button Name='btnExportLog' Content='Export Log' HorizontalAlignment='Right' Background='Transparent' Foreground='#64748B' BorderThickness='0' FontSize='10' Cursor='Hand'/>
+                                    </Grid>
                                     <TextBox Grid.Row='1' Name='txtConsole' IsReadOnly='True' Background='Transparent' Foreground='#CBD5E1' BorderThickness='0' FontFamily='Consolas' FontSize='11' VerticalScrollBarVisibility='Auto' TextWrapping='Wrap'/>
                                 </Grid>
                             </Border>
@@ -378,7 +388,10 @@ namespace OmniClean {
                                             <TextBlock Text='Selected to Reclaim:' FontSize='11' Foreground='#94A3B8'/>
                                             <TextBlock Name='txtSelectedSize' Text='0.00 MB' FontSize='20' FontWeight='Bold' Foreground='#F8FAFC'/>
                                         </StackPanel>
-                                        <Button Name='btnClean' Content='⚡ Clean Selected Storage' HorizontalAlignment='Right' Background='#6366F1' Foreground='White' BorderThickness='0' Padding='26,12' FontSize='14' FontWeight='Bold' Cursor='Hand'/>
+                                        <StackPanel Orientation='Horizontal' HorizontalAlignment='Right' VerticalAlignment='Center'>
+                                            <CheckBox Name='chkDryRun' Content='Dry Run (Preview Only)' FontSize='12' Margin='0,0,16,0' VerticalAlignment='Center'/>
+                                            <Button Name='btnClean' Content='⚡ Clean Selected Storage' Background='#6366F1' Foreground='White' BorderThickness='0' Padding='26,12' FontSize='14' FontWeight='Bold' Cursor='Hand'/>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </Grid>
@@ -481,15 +494,15 @@ namespace OmniClean {
                             </StackPanel>
                         </Border>
 
-                        <!-- Right: About & Architecture -->
+                        <!-- Right: About & Boundaries -->
                         <Border Grid.Column='1' Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='20' Margin='12,0,0,0'>
                             <StackPanel>
                                 <TextBlock Text='About OmniClean' FontSize='16' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
-                                <TextBlock Text='Version 2.0 Universal Standalone Edition.' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,12'/>
+                                <TextBlock Text='Version 1.0.0 Universal Standalone Edition.' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,12'/>
 
                                 <TextBlock Text='• Standalone portable executable with zero dependencies.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
-                                <TextBlock Text='• Universal: Works on any Windows 10, 11, or Server computer.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
-                                <TextBlock Text='• Native Win32 APIs for high-efficiency memory and disk access.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
+                                <TextBlock Text='• Safe By Design: Never touches browser passwords, personal photos, or documents.' FontSize='12' Foreground='#10B981' Margin='0,0,0,6'/>
+                                <TextBlock Text='• Non-destructive: Leaves SSDs un-defragmented to maximize drive lifespan.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
                                 <TextBlock Text='• Open Source Repository on GitHub:' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,2'/>
                                 <TextBlock Text='https://github.com/Junaed93/OmniClean' FontSize='12' Foreground='#818CF8' Margin='0,0,0,12'/>
                             </StackPanel>
@@ -503,7 +516,6 @@ namespace OmniClean {
 
                 mainWindow = (Window)XamlReader.Parse(xaml);
 
-                // Enable Windows 11 Dark Mode on titlebar
                 IntPtr hwnd = new WindowInteropHelper(mainWindow).EnsureHandle();
                 int useDark = 1;
                 DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDark, sizeof(int));
@@ -539,12 +551,15 @@ namespace OmniClean {
                 txtStatTotal = (TextBlock)mainWindow.FindName("txtStatTotal");
                 txtSelectedSize = (TextBlock)mainWindow.FindName("txtSelectedSize");
                 txtHardwarePill = (TextBlock)mainWindow.FindName("txtHardwarePill");
+                txtUptimePill = (TextBlock)mainWindow.FindName("txtUptimePill");
                 btnClean = (Button)mainWindow.FindName("btnClean");
                 btnRescan = (Button)mainWindow.FindName("btnRescan");
                 btnOptimizeRam = (Button)mainWindow.FindName("btnOptimizeRam");
                 btnSelectAll = (Button)mainWindow.FindName("btnSelectAll");
                 btnClearAll = (Button)mainWindow.FindName("btnClearAll");
+                chkDryRun = (CheckBox)mainWindow.FindName("chkDryRun");
                 txtConsole = (TextBox)mainWindow.FindName("txtConsole");
+                btnExportLog = (Button)mainWindow.FindName("btnExportLog");
                 pnlCategories = (StackPanel)mainWindow.FindName("pnlCategories");
                 bannerSuccess = (Border)mainWindow.FindName("bannerSuccess");
                 txtSuccessMsg = (TextBlock)mainWindow.FindName("txtSuccessMsg");
@@ -571,6 +586,7 @@ namespace OmniClean {
 
                 // Initialize System Info dynamically
                 DetectHardware();
+                CalculateUptime();
                 PopulateDrives();
                 InitCategoryDefinitions();
 
@@ -580,6 +596,7 @@ namespace OmniClean {
                 btnSelectAll.Click += (s, e) => { SetAllCheckboxes(true); };
                 btnClearAll.Click += (s, e) => { SetAllCheckboxes(false); };
                 btnClean.Click += (s, e) => { RunCleanAsync(); };
+                btnExportLog.Click += (s, e) => { ExportConsoleLog(); };
 
                 btnScanLargeFiles.Click += (s, e) => { ScanLargeFilesAsync(); };
                 btnScanDuplicates.Click += (s, e) => { ScanDuplicatesAsync(); };
@@ -603,7 +620,7 @@ namespace OmniClean {
                 };
 
                 // Startup calls
-                Log("OmniClean v2.0 Pro Suite initialized.");
+                Log("OmniClean v1.0.0 Pro Suite initialized.");
                 UpdateDiskMetrics();
                 CheckScheduledTask();
                 RunScanAsync();
@@ -623,6 +640,28 @@ namespace OmniClean {
                 txtConsole.AppendText(string.Format("[{0}] {1}\r\n", time, msg));
                 txtConsole.ScrollToEnd();
             }));
+        }
+
+        static void ExportConsoleLog() {
+            try {
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string logFile = Path.Combine(desktop, "OmniClean_Log.txt");
+                File.WriteAllText(logFile, txtConsole.Text);
+                MessageBox.Show(mainWindow, "Log exported to Desktop:\r\n" + logFile, "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            } catch (Exception ex) {
+                MessageBox.Show(mainWindow, "Error exporting log: " + ex.Message, "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        static void CalculateUptime() {
+            try {
+                TimeSpan uptime = TimeSpan.FromMilliseconds(Environment.TickCount);
+                string upStr = string.Format("Uptime: {0}d {1}h {2}m", uptime.Days, uptime.Hours, uptime.Minutes);
+                txtUptimePill.Text = upStr;
+                if (uptime.TotalDays > 3) {
+                    txtUptimePill.Foreground = new SolidColorBrush(Color.FromRgb(0xF5, 0x9E, 0x0B));
+                }
+            } catch { }
         }
 
         static void DetectHardware() {
@@ -705,7 +744,6 @@ namespace OmniClean {
                     GC.WaitForPendingFinalizers();
                     EmptyWorkingSet(Process.GetCurrentProcess().Handle);
 
-                    // Flush current user processes working sets where possible
                     foreach (var proc in Process.GetProcesses()) {
                         try {
                             if (proc.Id != Process.GetCurrentProcess().Id) {
@@ -757,6 +795,7 @@ namespace OmniClean {
             AddCategory("browser_cache", "Web Browser Caches", "Chrome, Edge, Brave, Firefox, and Opera internet cache and shader data");
             AddCategory("win_update", "Windows Update Download Cache", "Leftover update packages in SoftwareDistribution\\Download");
             AddCategory("crash_dumps", "Error Reports & Crash Dumps", "Windows Error Reporting (WER) and memory dump logs");
+            AddCategory("empty_folders", "Empty Temporary Directories", "Abandoned 0-byte directories created by uninstalled applications");
 
             AddCategory("vscode_cache", "VS Code Caches & Crash Dumps", "Visual Studio Code installer packages and crash logs");
             AddCategory("dev_cache", "npm & pip Package Caches", "Node.js and Python package manager cache folders");
@@ -991,7 +1030,7 @@ namespace OmniClean {
             return total;
         }
 
-        static void CleanBrowserCaches() {
+        static void CleanBrowserCaches(bool dryRun) {
             string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string[] browserRoots = new string[] {
                 Path.Combine(localApp, @"Google\Chrome\User Data"),
@@ -1005,9 +1044,9 @@ namespace OmniClean {
                 if (Directory.Exists(root)) {
                     try {
                         foreach (var dir in Directory.GetDirectories(root)) {
-                            CleanFolder(Path.Combine(dir, "Cache"));
-                            CleanFolder(Path.Combine(dir, "Code Cache"));
-                            CleanFolder(Path.Combine(dir, "cache2"));
+                            CleanFolder(Path.Combine(dir, "Cache"), dryRun);
+                            CleanFolder(Path.Combine(dir, "Code Cache"), dryRun);
+                            CleanFolder(Path.Combine(dir, "cache2"), dryRun);
                         }
                     } catch { }
                 }
@@ -1045,6 +1084,8 @@ namespace OmniClean {
                         } else if (cat.Id == "crash_dumps") {
                             size = GetDirectorySizeMB(Path.Combine(localApp, "CrashDumps"))
                                  + GetDirectorySizeMB(Path.Combine(progData, @"Microsoft\Windows\WER"));
+                        } else if (cat.Id == "empty_folders") {
+                            size = 0.5; // Nominal badge indicator
                         } else if (cat.Id == "nvidia_artifacts") {
                             string nv = Path.Combine(progData, @"NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts");
                             exists = Directory.Exists(Path.Combine(progData, @"NVIDIA Corporation"));
@@ -1113,14 +1154,32 @@ namespace OmniClean {
             }));
         }
 
-        static void CleanFolder(string path) {
+        static void CleanFolder(string path, bool dryRun = false) {
             if (!Directory.Exists(path)) return;
             try {
                 foreach (string file in Directory.GetFiles(path)) {
-                    try { File.Delete(file); } catch { }
+                    try {
+                        if (!dryRun) File.Delete(file);
+                    } catch { }
                 }
                 foreach (string dir in Directory.GetDirectories(path)) {
-                    try { Directory.Delete(dir, true); } catch { }
+                    try {
+                        if (!dryRun) Directory.Delete(dir, true);
+                    } catch { }
+                }
+            } catch { }
+        }
+
+        static void CleanEmptyDirectories(string path, bool dryRun = false) {
+            if (!Directory.Exists(path)) return;
+            try {
+                foreach (var d in Directory.GetDirectories(path)) {
+                    CleanEmptyDirectories(d, dryRun);
+                    try {
+                        if (Directory.GetFiles(d).Length == 0 && Directory.GetDirectories(d).Length == 0) {
+                            if (!dryRun) Directory.Delete(d, false);
+                        }
+                    } catch { }
                 }
             } catch { }
         }
@@ -1131,7 +1190,9 @@ namespace OmniClean {
             btnClean.IsEnabled = false;
             btnClean.Content = "Cleaning Storage...";
             bannerSuccess.Visibility = Visibility.Collapsed;
-            Log("Starting universal optimization process...");
+
+            bool isDryRun = (chkDryRun.IsChecked == true);
+            Log(isDryRun ? "[Dry Run] Simulating storage optimization without deleting..." : "Starting universal optimization process...");
 
             Task.Run(new Action(() => {
                 string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -1147,23 +1208,25 @@ namespace OmniClean {
 
                     if (!shouldClean) continue;
 
-                    Log("Cleaning " + cat.Name + "...");
+                    Log((isDryRun ? "[Preview] " : "Cleaning ") + cat.Name + "...");
                     try {
                         if (cat.Id == "recycle_bin") {
-                            SHEmptyRecycleBin(IntPtr.Zero, null, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND);
+                            if (!isDryRun) SHEmptyRecycleBin(IntPtr.Zero, null, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND);
                         } else if (cat.Id == "temp_files") {
-                            CleanFolder(Path.GetTempPath());
-                            CleanFolder(Path.Combine(winDir, "Temp"));
+                            CleanFolder(Path.GetTempPath(), isDryRun);
+                            CleanFolder(Path.Combine(winDir, "Temp"), isDryRun);
                         } else if (cat.Id == "browser_cache") {
-                            CleanBrowserCaches();
+                            CleanBrowserCaches(isDryRun);
                         } else if (cat.Id == "win_update") {
-                            CleanFolder(Path.Combine(winDir, @"SoftwareDistribution\Download"));
+                            CleanFolder(Path.Combine(winDir, @"SoftwareDistribution\Download"), isDryRun);
                         } else if (cat.Id == "crash_dumps") {
-                            CleanFolder(Path.Combine(localApp, "CrashDumps"));
-                            CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportQueue"));
-                            CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportArchive"));
+                            CleanFolder(Path.Combine(localApp, "CrashDumps"), isDryRun);
+                            CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportQueue"), isDryRun);
+                            CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportArchive"), isDryRun);
+                        } else if (cat.Id == "empty_folders") {
+                            CleanEmptyDirectories(Path.GetTempPath(), isDryRun);
                         } else if (cat.Id == "nvidia_artifacts") {
-                            CleanFolder(Path.Combine(progData, @"NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts"));
+                            CleanFolder(Path.Combine(progData, @"NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts"), isDryRun);
                         } else if (cat.Id == "capcut_old") {
                             string capApps = Path.Combine(localApp, @"CapCut\Apps");
                             if (Directory.Exists(capApps)) {
@@ -1173,21 +1236,21 @@ namespace OmniClean {
                                     string latest = dirs[dirs.Count - 1];
                                     foreach (var d in dirs) {
                                         if (d != latest) {
-                                            try { Directory.Delete(d, true); } catch { }
+                                            try { if (!isDryRun) Directory.Delete(d, true); } catch { }
                                         }
                                     }
                                 }
                             }
                         } else if (cat.Id == "vscode_cache") {
                             string vscPath = Path.Combine(appData, "Code");
-                            CleanFolder(Path.Combine(vscPath, "CachedExtensionVSIXs"));
-                            CleanFolder(Path.Combine(vscPath, @"Crashpad\reports"));
-                            CleanFolder(Path.Combine(vscPath, "CachedData"));
+                            CleanFolder(Path.Combine(vscPath, "CachedExtensionVSIXs"), isDryRun);
+                            CleanFolder(Path.Combine(vscPath, @"Crashpad\reports"), isDryRun);
+                            CleanFolder(Path.Combine(vscPath, "CachedData"), isDryRun);
                         } else if (cat.Id == "dev_cache") {
-                            CleanFolder(Path.Combine(localApp, "npm-cache"));
-                            CleanFolder(Path.Combine(localApp, @"pip\cache"));
+                            CleanFolder(Path.Combine(localApp, "npm-cache"), isDryRun);
+                            CleanFolder(Path.Combine(localApp, @"pip\cache"), isDryRun);
                         } else if (cat.Id == "discord_cache") {
-                            CleanFolder(Path.Combine(appData, @"discord\Cache"));
+                            CleanFolder(Path.Combine(appData, @"discord\Cache"), isDryRun);
                         }
                     } catch (Exception ex) {
                         Log("Warning: " + ex.Message);
@@ -1198,9 +1261,9 @@ namespace OmniClean {
                     isCleaning = false;
                     btnClean.Content = "Clean Selected Storage";
                     UpdateDiskMetrics();
-                    Log("Universal cleanup successfully finished.");
+                    Log(isDryRun ? "Simulation finished. No files were modified." : "Universal cleanup successfully finished.");
                     bannerSuccess.Visibility = Visibility.Visible;
-                    txtSuccessMsg.Text = "Cleanup complete! Selected storage targets successfully purged.";
+                    txtSuccessMsg.Text = isDryRun ? "Simulation complete. Storage preview calculated." : "Cleanup complete! Selected storage targets successfully purged.";
                     RunScanAsync();
                 }));
             }));
@@ -1345,7 +1408,7 @@ namespace OmniClean {
             btnScanDuplicates.IsEnabled = false;
             btnScanDuplicates.Content = "Scanning Duplicates...";
             pnlDuplicates.Children.Clear();
-            txtDuplicatesSummary.Text = "Scanning Downloads and user files for duplicate matches...";
+            txtDuplicatesSummary.Text = "Scanning Downloads, Documents, and Pictures for duplicate matches...";
 
             Task.Run(new Action(() => {
                 string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -1611,26 +1674,26 @@ namespace OmniClean {
             try {
                 SHEmptyRecycleBin(IntPtr.Zero, null, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND);
                 string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
-                CleanFolder(Path.GetTempPath());
-                CleanFolder(Path.Combine(winDir, "Temp"));
-                CleanBrowserCaches();
-                CleanFolder(Path.Combine(winDir, @"SoftwareDistribution\Download"));
+                CleanFolder(Path.GetTempPath(), false);
+                CleanFolder(Path.Combine(winDir, "Temp"), false);
+                CleanBrowserCaches(false);
+                CleanFolder(Path.Combine(winDir, @"SoftwareDistribution\Download"), false);
 
                 string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 string progData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                CleanFolder(Path.Combine(localApp, "CrashDumps"));
-                CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportQueue"));
+                CleanFolder(Path.Combine(localApp, "CrashDumps"), false);
+                CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportQueue"), false);
 
-                CleanFolder(Path.Combine(localApp, "npm-cache"));
-                CleanFolder(Path.Combine(localApp, @"pip\cache"));
+                CleanFolder(Path.Combine(localApp, "npm-cache"), false);
+                CleanFolder(Path.Combine(localApp, @"pip\cache"), false);
 
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                CleanFolder(Path.Combine(appData, @"discord\Cache"));
+                CleanFolder(Path.Combine(appData, @"discord\Cache"), false);
 
                 string vscPath = Path.Combine(appData, "Code");
                 if (Directory.Exists(vscPath)) {
-                    CleanFolder(Path.Combine(vscPath, "CachedExtensionVSIXs"));
-                    CleanFolder(Path.Combine(vscPath, @"Crashpad\reports"));
+                    CleanFolder(Path.Combine(vscPath, "CachedExtensionVSIXs"), false);
+                    CleanFolder(Path.Combine(vscPath, @"Crashpad\reports"), false);
                 }
             } catch { }
         }

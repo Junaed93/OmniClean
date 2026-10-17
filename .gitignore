@@ -2,6 +2,7 @@
 *.obj
 *.pdb
 *.tmp
+*.exe
 
 # System & IDE files
 .vscode/

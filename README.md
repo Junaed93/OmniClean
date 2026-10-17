@@ -1,40 +1,55 @@
-# OmniClean ⚡
+# OmniClean
 
-> **Universal Windows Storage Optimizer & Performance Utility**  
-> A lightweight, ultra-fast native Windows tool to automatically reclaim disk space, purge system junk, and keep your PC running at peak performance.
+Universal Windows Storage Optimizer and Performance Utility.
 
----
-
-## 🚀 Features
-
-- **⚡ Universal Compatibility**: Runs out of the box on Windows 10, Windows 11, and Windows Server (x64 and x86). Zero external dependencies or runtimes required.
-- **🖥️ Dynamic Hardware Detection**: Automatically detects host CPU (Intel/AMD), physical RAM, active GPU, and Windows system drive.
-- **💾 Multi-Drive Selector**: Inspects and cleans any connected fixed drive (`C:`, `D:`, `E:`, etc.).
-- **🌐 Universal Web Browser Cleaning**: Cleans cache and shader data across Google Chrome, Microsoft Edge, Brave Browser, Mozilla Firefox, and Opera without touching logins or bookmarks.
-- **🗑️ Deep Windows Cleaning**:
-  - Windows Recycle Bin (via native Win32 `SHEmptyRecycleBin` API)
-  - System & User Temp Files (`%TEMP%` and `C:\Windows\Temp`)
-  - Windows Update Download Cache (`SoftwareDistribution\Download`)
-  - Windows Error Reporting (WER) and memory dump files
-- **📦 Power-User & Developer Caches**:
-  - npm and pip download caches
-  - VS Code extension and crashpad caches
-  - Discord client media and shader cache
-  - Outdated CapCut version remnants
-  - NVIDIA driver update installation packages (`ota-artifacts`)
-- **⏰ Silent Background Auto-Scheduler**:
-  - 1-click toggle to schedule silent background cleanup every Sunday at 12:00 PM via Windows Task Scheduler.
-- **📊 Real-Time Activity Log**:
-  - Transparent live logging of all files and folders being scanned and cleaned.
+OmniClean is a native, lightweight Windows desktop application designed to inspect system drives, reclaim disk space from redundant caches, remove obsolete application files, and optimize overall system responsiveness. It runs as a standalone executable with zero external runtime dependencies.
 
 ---
 
-## 🛠️ How to Build from Source
+## Key Features
 
-OmniClean is written in C# and WPF. It compiles with the built-in Microsoft .NET Framework C# compiler (`csc.exe`) available on all Windows installations.
+- **Universal Hardware and OS Support**: Fully compatible with Windows 10, Windows 11, and Windows Server across x64 and x86 architectures.
+- **Dynamic System Inspection**: Detects host processor specifications, physical RAM capacity, graphics hardware, and Windows system root dynamically at runtime without hardcoded paths.
+- **Multi-Drive Selection**: Allows users to inspect and optimize any attached fixed storage volume (C:, D:, E:, etc.).
+- **Universal Browser Cache Cleaner**: Scans and cleans user-level cache and shader data across Google Chrome, Microsoft Edge, Brave Browser, Mozilla Firefox, and Opera without modifying active logins, history, or saved passwords.
+- **Windows System Cleanup**:
+  - Empties the Windows Recycle Bin using the native Win32 SHEmptyRecycleBin API.
+  - Cleans user temporary directories (%TEMP%) and Windows system temporary files.
+  - Purges completed Windows Update download files located in SoftwareDistribution\Download.
+  - Clears Windows Error Reporting (WER) queue archives and crash dump files.
+- **Developer and Application Caches**:
+  - Package manager caches: npm-cache and pip cache.
+  - Visual Studio Code extension installers, crash reports, and cached editor data.
+  - Discord media and shader caches.
+  - Obsolete CapCut version builds (removes older versions while preserving the latest active release).
+  - Outdated NVIDIA GPU driver update installer packages.
+- **Large File Finder**: Identifies hidden large files (>100 MB) consuming disk space, with quick navigation to reveal files in Windows Explorer.
+- **Startup Optimizer**: Identifies auto-launch programs configured in the Windows Registry (HKCU\Run and HKLM\Run) and allows one-click disabling to reduce boot times and free memory.
+- **Silent Background Automation**: Integrates with the Windows Task Scheduler to run maintenance routines automatically and silently on a weekly schedule.
 
-### 1-Click Build:
-Simply double-click `build.bat`, or run the following command in PowerShell:
+---
+
+## Technical Architecture
+
+- **Language**: C# / .NET Framework 4.5+ (Pre-installed natively on all modern Windows installations).
+- **GUI Framework**: Windows Presentation Foundation (WPF) with hardware-accelerated rendering.
+- **Binary Size**: ~65 KB standalone executable with embedded application icon.
+- **Dependencies**: None. Compiles using the built-in Microsoft Visual C# compiler (csc.exe).
+- **Silent Execution Mode**: Supports the `--silent-clean` CLI parameter for headless automated operation via scheduled tasks.
+
+---
+
+## Compilation Instructions
+
+OmniClean can be compiled directly on any Windows system using the native C# compiler without requiring Visual Studio or external package managers.
+
+### 1-Click Build Script
+
+Run `build.bat` from the root directory.
+
+### Manual PowerShell Build
+
+Execute the following commands in PowerShell:
 
 ```powershell
 $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
@@ -46,20 +61,33 @@ $wpfDir = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
   /win32icon:"app.ico" /out:"OmniClean.exe" "OmniClean.cs"
 ```
 
-The resulting `OmniClean.exe` is a standalone, portable 54 KB binary.
+---
+
+## Command Line Usage
+
+| Command | Description |
+| :--- | :--- |
+| `OmniClean.exe` | Launches the graphical user interface. |
+| `OmniClean.exe --silent-clean` | Executes a silent background cleanup of safe temporary files and caches without opening the GUI. |
 
 ---
 
-## 🏃 Usage
+## Project Structure
 
-1. Run `OmniClean.exe`.
-2. Click **🔄 Rescan Storage** to inspect your drive.
-3. Select the categories you wish to purge.
-4. Click **⚡ Clean Selected Storage**.
-5. *(Optional)* Toggle **Enable Weekly Silent Auto-Clean** to let Windows maintain your drive automatically.
+```text
+OmniClean/
+|-- OmniClean.cs       # Complete C# WPF application source code
+|-- OmniClean.exe      # Compiled standalone executable
+|-- app.ico            # Application icon asset
+|-- build.bat          # Automated compilation script
+|-- cleaner.ps1        # Standalone PowerShell cleanup utility
+|-- scan.ps1           # Standalone PowerShell storage analyzer
+|-- README.md          # Project documentation
+`-- .gitignore         # Version control exclusion rules
+```
 
 ---
 
-## 📜 License
+## License
 
-MIT License. Free for personal and commercial use.
+This project is licensed under the MIT License. Free for personal and commercial use.

@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using Microsoft.Win32;
@@ -20,6 +21,23 @@ namespace OmniClean {
         public CheckBox CheckBoxRef { get; set; }
         public TextBlock BadgeRef { get; set; }
         public Border CardRef { get; set; }
+    }
+
+    public class LargeFileInfo {
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+        public long Bytes { get; set; }
+        public double SizeMB { get; set; }
+        public Border CardRef { get; set; }
+    }
+
+    public class StartupAppItem {
+        public string Name { get; set; }
+        public string Command { get; set; }
+        public bool IsEnabled { get; set; }
+        public Border CardRef { get; set; }
+        public Button ToggleBtnRef { get; set; }
+        public TextBlock StatusTextRef { get; set; }
     }
 
     class Program {
@@ -49,6 +67,11 @@ namespace OmniClean {
         const string TASK_NAME = "OmniCleanUniversalAutoClean";
 
         static Window mainWindow;
+        static Border titleBar;
+        static Button btnMinimize;
+        static Button btnMaximize;
+        static Button btnClose;
+
         static ComboBox cmbDrive;
         static ProgressBar diskProgress;
         static TextBlock txtDiskPercent;
@@ -67,14 +90,26 @@ namespace OmniClean {
         static TextBox txtConsole;
         static StackPanel pnlCategories;
 
+        // Large Files Tab
+        static Button btnScanLargeFiles;
+        static StackPanel pnlLargeFiles;
+        static TextBlock txtLargeFilesSummary;
+
+        // Startup Apps Tab
+        static Button btnScanStartup;
+        static StackPanel pnlStartupApps;
+        static TextBlock txtStartupSummary;
+
         static List<CategoryItem> categories = new List<CategoryItem>();
+        static List<LargeFileInfo> largeFiles = new List<LargeFileInfo>();
+        static List<StartupAppItem> startupApps = new List<StartupAppItem>();
+
         static bool isScanning = false;
         static bool isCleaning = false;
         static string selectedDriveLetter = "C";
 
         [STAThread]
         static void Main(string[] args) {
-            // If executed by Task Scheduler with --silent-clean, run silent cleanup and exit
             if (args != null && args.Length > 0 && args[0].Equals("--silent-clean", StringComparison.OrdinalIgnoreCase)) {
                 PerformSilentCleanup();
                 return;
@@ -86,16 +121,18 @@ namespace OmniClean {
                 string xaml = @"
 <Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
         xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
-        Title='OmniClean - Universal Windows Storage Optimizer'
-        Width='1080' Height='740'
-        MinWidth='960' MinHeight='660'
+        Title='OmniClean - Universal Windows Optimizer'
+        Width='1120' Height='760'
+        MinWidth='980' MinHeight='680'
         WindowStartupLocation='CenterScreen'
-        Background='#0A0E1A'
+        WindowStyle='None'
+        AllowsTransparency='True'
+        Background='Transparent'
         Foreground='#F8FAFC'
         FontFamily='Segoe UI'>
     <Window.Resources>
         <Style TargetType='Border'>
-            <Setter Property='CornerRadius' Value='16'/>
+            <Setter Property='CornerRadius' Value='14'/>
         </Style>
         <Style TargetType='CheckBox'>
             <Setter Property='Foreground' Value='#F1F5F9'/>
@@ -103,192 +140,294 @@ namespace OmniClean {
             <Setter Property='VerticalContentAlignment' Value='Center'/>
             <Setter Property='Cursor' Value='Hand'/>
         </Style>
+        <Style TargetType='TabItem'>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='TabItem'>
+                        <Border Name='tabBorder' Background='Transparent' Padding='18,10' Margin='0,0,8,0' CornerRadius='10'>
+                            <ContentPresenter ContentSource='Header' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsSelected' Value='True'>
+                                <Setter TargetName='tabBorder' Property='Background' Value='#1E293B'/>
+                                <Setter Property='TextElement.Foreground' Value='#FFFFFF'/>
+                                <Setter Property='TextElement.FontWeight' Value='Bold'/>
+                            </Trigger>
+                            <Trigger Property='IsSelected' Value='False'>
+                                <Setter Property='TextElement.Foreground' Value='#94A3B8'/>
+                                <Setter Property='TextElement.FontWeight' Value='SemiBold'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Grid Margin='24'>
-        <Grid.RowDefinitions>
-            <RowDefinition Height='Auto'/>
-            <RowDefinition Height='*'/>
-        </Grid.RowDefinitions>
+    <!-- Outer Window Frame -->
+    <Border Background='#090D18' BorderBrush='#1F293D' BorderThickness='1' CornerRadius='18'>
+        <Grid Margin='18'>
+            <Grid.RowDefinitions>
+                <RowDefinition Height='Auto'/>
+                <RowDefinition Height='*'/>
+            </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row='0' Background='#141B2D' BorderBrush='#232D47' BorderThickness='1' Padding='18,14' Margin='0,0,0,20'>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width='Auto'/>
-                    <ColumnDefinition Width='*'/>
-                    <ColumnDefinition Width='Auto'/>
-                </Grid.ColumnDefinitions>
+            <!-- Custom Modern Titlebar / Header -->
+            <Border Grid.Row='0' Name='titleBar' Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='16,12' Margin='0,0,0,16' CornerRadius='14' Cursor='SizeAll'>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width='Auto'/>
+                        <ColumnDefinition Width='*'/>
+                        <ColumnDefinition Width='Auto'/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column='0' Orientation='Horizontal'>
-                    <Border Width='42' Height='42' Background='#6366F1' CornerRadius='10' Margin='0,0,14,0'>
-                        <TextBlock Text='⚡' FontSize='22' Foreground='White' HorizontalAlignment='Center' VerticalAlignment='Center'/>
-                    </Border>
-                    <StackPanel VerticalAlignment='Center'>
+                    <!-- Brand Icon & Title -->
+                    <StackPanel Grid.Column='0' Orientation='Horizontal' VerticalAlignment='Center'>
+                        <Border Width='36' Height='36' Background='#6366F1' CornerRadius='10' Margin='0,0,12,0'>
+                            <TextBlock Text='⚡' FontSize='18' Foreground='White' HorizontalAlignment='Center' VerticalAlignment='Center'/>
+                        </Border>
+                        <StackPanel VerticalAlignment='Center'>
+                            <StackPanel Orientation='Horizontal'>
+                                <TextBlock Text='OmniClean' FontSize='18' FontWeight='Bold' Foreground='#FFFFFF'/>
+                                <Border Background='#262054' BorderBrush='#6366F1' BorderThickness='1' CornerRadius='6' Padding='6,2' Margin='8,0,0,0'>
+                                    <TextBlock Text='UNIVERSAL' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text='Windows Performance &amp; Storage Suite' FontSize='11' Foreground='#94A3B8'/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Hardware Specs Pill -->
+                    <Border Grid.Column='1' HorizontalAlignment='Center' VerticalAlignment='Center' Background='#0B1120' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='18' Padding='14,6'>
                         <StackPanel Orientation='Horizontal'>
-                            <TextBlock Text='OmniClean' FontSize='21' FontWeight='Bold' Foreground='#FFFFFF'/>
-                            <Border Background='#262054' BorderBrush='#6366F1' BorderThickness='1' CornerRadius='8' Padding='8,2' Margin='10,0,0,0'>
-                                <TextBlock Text='UNIVERSAL PRO' FontSize='10' FontWeight='Bold' Foreground='#A5B4FC'/>
+                            <Ellipse Width='8' Height='8' Fill='#10B981' Margin='0,0,8,0'/>
+                            <TextBlock Name='txtHardwarePill' Text='Detecting System Specs...' FontSize='12' Foreground='#94A3B8'/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Window Control Buttons (Minimize, Maximize, Close) -->
+                    <StackPanel Grid.Column='2' Orientation='Horizontal' VerticalAlignment='Center'>
+                        <Button Name='btnMinimize' Content='—' Width='32' Height='32' Background='#1A2338' Foreground='#CBD5E1' BorderThickness='0' Margin='0,0,6,0' FontWeight='Bold' Cursor='Hand'/>
+                        <Button Name='btnMaximize' Content='▢' Width='32' Height='32' Background='#1A2338' Foreground='#CBD5E1' BorderThickness='0' Margin='0,0,6,0' FontWeight='Bold' Cursor='Hand'/>
+                        <Button Name='btnClose' Content='✕' Width='32' Height='32' Background='#3F1C25' Foreground='#F87171' BorderThickness='0' FontWeight='Bold' Cursor='Hand'/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Main Tab Control -->
+            <TabControl Grid.Row='1' Background='Transparent' BorderThickness='0'>
+                <!-- TAB 1: Storage Cleaner -->
+                <TabItem Header='Storage Cleaner'>
+                    <Grid Margin='0,14,0,0'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='360'/>
+                            <ColumnDefinition Width='*'/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Column: Drive Capacity & Rescan -->
+                        <StackPanel Grid.Column='0' Margin='0,0,18,0'>
+                            <Border Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='18' Margin='0,0,0,16'>
+                                <StackPanel>
+                                    <Grid Margin='0,0,0,12'>
+                                        <StackPanel Orientation='Horizontal' VerticalAlignment='Center'>
+                                            <TextBlock Text='Drive:' FontSize='14' FontWeight='Bold' Foreground='White' VerticalAlignment='Center' Margin='0,0,8,0'/>
+                                            <ComboBox Name='cmbDrive' Width='110' Height='28' Background='#0E1424' Foreground='#F8FAFC' BorderBrush='#334155'/>
+                                        </StackPanel>
+                                        <Button Name='btnRescan' Content='🔄 Rescan' HorizontalAlignment='Right' Background='#1E293B' Foreground='#E2E8F0' BorderBrush='#334155' BorderThickness='1' Padding='10,4' FontSize='11' FontWeight='SemiBold' Cursor='Hand'/>
+                                    </Grid>
+
+                                    <TextBlock Name='txtDiskPercent' Text='--% Free' FontSize='30' FontWeight='Bold' Foreground='#10B981' Margin='0,0,0,4'/>
+                                    <TextBlock Name='txtDiskRatio' Text='-- GB Free / -- GB' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,10'/>
+                                    <ProgressBar Name='diskProgress' Height='12' Value='30' Maximum='100' Foreground='#10B981' Background='#0A0F1D' BorderBrush='#232D47' Margin='0,0,0,14'/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width='*'/>
+                                            <ColumnDefinition Width='*'/>
+                                            <ColumnDefinition Width='*'/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column='0' Background='#0B1120' Padding='8' Margin='0,0,4,0' CornerRadius='8'>
+                                            <StackPanel HorizontalAlignment='Center'>
+                                                <TextBlock Text='Free' FontSize='10' Foreground='#64748B'/>
+                                                <TextBlock Name='txtStatFree' Text='-- GB' FontSize='12' FontWeight='Bold' Foreground='#10B981'/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column='1' Background='#0B1120' Padding='8' Margin='2,0,2,0' CornerRadius='8'>
+                                            <StackPanel HorizontalAlignment='Center'>
+                                                <TextBlock Text='Used' FontSize='10' Foreground='#64748B'/>
+                                                <TextBlock Name='txtStatUsed' Text='-- GB' FontSize='12' FontWeight='Bold' Foreground='#818CF8'/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column='2' Background='#0B1120' Padding='8' Margin='4,0,0,0' CornerRadius='8'>
+                                            <StackPanel HorizontalAlignment='Center'>
+                                                <TextBlock Text='Total' FontSize='10' Foreground='#64748B'/>
+                                                <TextBlock Name='txtStatTotal' Text='-- GB' FontSize='12' FontWeight='Bold' Foreground='#38BDF8'/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Live Activity Log -->
+                            <Border Background='#0B1120' BorderBrush='#1E293B' BorderThickness='1' Padding='14' Height='240'>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height='Auto'/>
+                                        <RowDefinition Height='*'/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row='0' Orientation='Horizontal' Margin='0,0,0,6'>
+                                        <Ellipse Width='7' Height='7' Fill='#06B6D4' Margin='0,0,6,0'/>
+                                        <TextBlock Text='Activity Console' FontSize='11' FontWeight='SemiBold' Foreground='#94A3B8'/>
+                                    </StackPanel>
+                                    <TextBox Grid.Row='1' Name='txtConsole' IsReadOnly='True' Background='Transparent' Foreground='#CBD5E1' BorderThickness='0' FontFamily='Consolas' FontSize='11' VerticalScrollBarVisibility='Auto' TextWrapping='Wrap'/>
+                                </Grid>
                             </Border>
                         </StackPanel>
-                        <TextBlock Text='Works on any Windows PC • Dynamic Hardware &amp; Storage Engine' FontSize='12' Foreground='#94A3B8'/>
-                    </StackPanel>
-                </StackPanel>
 
-                <Border Grid.Column='1' HorizontalAlignment='Center' Background='#0E1424' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='20' Padding='16,6'>
-                    <StackPanel Orientation='Horizontal'>
-                        <Ellipse Width='8' Height='8' Fill='#10B981' Margin='0,0,8,0'/>
-                        <TextBlock Name='txtHardwarePill' Text='Detecting Hardware...' FontSize='12' Foreground='#94A3B8'/>
-                    </StackPanel>
-                </Border>
-
-                <StackPanel Grid.Column='2' Orientation='Horizontal'>
-                    <Button Name='btnRescan' Content='🔄 Rescan Storage' Background='#1E293B' Foreground='#E2E8F0' BorderBrush='#334155' BorderThickness='1' Padding='16,8' FontWeight='SemiBold' Cursor='Hand'/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Content Grid -->
-        <Grid Grid.Row='1'>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width='380'/>
-                <ColumnDefinition Width='*'/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Left Panel -->
-            <StackPanel Grid.Column='0' Margin='0,0,20,0'>
-                <!-- Drive Capacity Card -->
-                <Border Background='#141B2D' BorderBrush='#232D47' BorderThickness='1' Padding='20' Margin='0,0,0,16'>
-                    <StackPanel>
-                        <Grid Margin='0,0,0,14'>
-                            <StackPanel Orientation='Horizontal'>
-                                <TextBlock Text='Drive:' FontSize='15' FontWeight='Bold' Foreground='White' VerticalAlignment='Center' Margin='0,0,8,0'/>
-                                <ComboBox Name='cmbDrive' Width='110' Height='28' Background='#0E1424' Foreground='#F8FAFC' BorderBrush='#334155'/>
-                            </StackPanel>
-                            <Border HorizontalAlignment='Right' Background='#0E2A36' BorderBrush='#06B6D4' BorderThickness='1' CornerRadius='6' Padding='6,2'>
-                                <TextBlock Text='System Drive' FontSize='10' FontWeight='Bold' Foreground='#22D3EE'/>
-                            </Border>
-                        </Grid>
-
-                        <TextBlock Name='txtDiskPercent' Text='--% Free' FontSize='32' FontWeight='Bold' Foreground='#10B981' Margin='0,0,0,4'/>
-                        <TextBlock Name='txtDiskRatio' Text='-- GB Free / -- GB' FontSize='13' Foreground='#94A3B8' Margin='0,0,0,12'/>
-
-                        <ProgressBar Name='diskProgress' Height='14' Value='30' Maximum='100' Foreground='#10B981' Background='#0A0F1D' BorderBrush='#232D47' Margin='0,0,0,16'/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width='*'/>
-                                <ColumnDefinition Width='*'/>
-                                <ColumnDefinition Width='*'/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column='0' Background='#0E1424' Padding='8' Margin='0,0,4,0' CornerRadius='8'>
-                                <StackPanel HorizontalAlignment='Center'>
-                                    <TextBlock Text='Free' FontSize='11' Foreground='#64748B'/>
-                                    <TextBlock Name='txtStatFree' Text='-- GB' FontSize='13' FontWeight='Bold' Foreground='#10B981'/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column='1' Background='#0E1424' Padding='8' Margin='2,0,2,0' CornerRadius='8'>
-                                <StackPanel HorizontalAlignment='Center'>
-                                    <TextBlock Text='Used' FontSize='11' Foreground='#64748B'/>
-                                    <TextBlock Name='txtStatUsed' Text='-- GB' FontSize='13' FontWeight='Bold' Foreground='#818CF8'/>
-                                </StackPanel>
-                            </Border>
-                            <Border Grid.Column='2' Background='#0E1424' Padding='8' Margin='4,0,0,0' CornerRadius='8'>
-                                <StackPanel HorizontalAlignment='Center'>
-                                    <TextBlock Text='Total' FontSize='11' Foreground='#64748B'/>
-                                    <TextBlock Name='txtStatTotal' Text='-- GB' FontSize='13' FontWeight='Bold' Foreground='#38BDF8'/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- Automatic Scheduler Card -->
-                <Border Background='#141B2D' BorderBrush='#232D47' BorderThickness='1' Padding='20'>
-                    <StackPanel>
-                        <Grid Margin='0,0,0,8'>
-                            <StackPanel Orientation='Horizontal'>
-                                <TextBlock Text='⏰' FontSize='16' Margin='0,0,8,0'/>
-                                <TextBlock Text='Auto-Clean Schedule' FontSize='15' FontWeight='Bold' Foreground='White'/>
-                            </StackPanel>
-                        </Grid>
-                        <TextBlock Text='Runs silently in the background every Sunday at 12:00 PM via Windows Task Scheduler. Cleans Recycle Bin, temp files, and caches.' FontSize='12' Foreground='#94A3B8' TextWrapping='Wrap' Margin='0,0,0,12'/>
-                        <CheckBox Name='chkAutoClean' Content='Enable Weekly Silent Auto-Clean' Margin='0,0,0,8'/>
-                        <Border Background='#0A0E1A' Padding='8,6' CornerRadius='6'>
-                            <TextBlock Name='txtScheduleStatus' Text='Status: Checking...' FontSize='11' Foreground='#64748B'/>
-                        </Border>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <!-- Right Panel -->
-            <Grid Grid.Column='1'>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height='*'/>
-                    <RowDefinition Height='160'/>
-                </Grid.RowDefinitions>
-
-                <!-- Target Categories Card -->
-                <Border Grid.Row='0' Background='#141B2D' BorderBrush='#232D47' BorderThickness='1' Padding='20' Margin='0,0,0,16'>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height='Auto'/>
-                            <RowDefinition Height='*'/>
-                            <RowDefinition Height='Auto'/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Category Header -->
-                        <Grid Grid.Row='0' Margin='0,0,0,12'>
-                            <StackPanel>
-                                <TextBlock Text='Cleanable Targets' FontSize='17' FontWeight='Bold' Foreground='White'/>
-                                <TextBlock Text='Safely detected on this PC' FontSize='12' Foreground='#94A3B8'/>
-                            </StackPanel>
-                            <StackPanel Orientation='Horizontal' HorizontalAlignment='Right'>
-                                <Button Name='btnSelectAll' Content='Select All' Background='#1E293B' Foreground='#CBD5E1' BorderBrush='#334155' BorderThickness='1' Padding='10,4' FontSize='11' Margin='0,0,6,0' Cursor='Hand'/>
-                                <Button Name='btnClearAll' Content='Clear' Background='#1E293B' Foreground='#CBD5E1' BorderBrush='#334155' BorderThickness='1' Padding='10,4' FontSize='11' Cursor='Hand'/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Scrollable Category List -->
-                        <ScrollViewer Grid.Row='1' VerticalScrollBarVisibility='Auto' Margin='0,0,0,12'>
-                            <StackPanel Name='pnlCategories'/>
-                        </ScrollViewer>
-
-                        <!-- Action Bar -->
-                        <Border Grid.Row='2' BorderBrush='#232D47' BorderThickness='0,1,0,0' Padding='0,14,0,0'>
+                        <!-- Right Column: Cleanable Categories -->
+                        <Border Grid.Column='1' Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='18'>
                             <Grid>
-                                <StackPanel VerticalAlignment='Center'>
-                                    <TextBlock Text='Selected to Reclaim:' FontSize='11' Foreground='#94A3B8'/>
-                                    <TextBlock Name='txtSelectedSize' Text='0.00 MB' FontSize='20' FontWeight='Bold' Foreground='#F8FAFC'/>
-                                </StackPanel>
-                                <Button Name='btnClean' Content='⚡ Clean Selected Storage' HorizontalAlignment='Right' Background='#6366F1' Foreground='White' BorderThickness='0' Padding='26,12' FontSize='14' FontWeight='Bold' Cursor='Hand'/>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height='Auto'/>
+                                    <RowDefinition Height='*'/>
+                                    <RowDefinition Height='Auto'/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Categories Header -->
+                                <Grid Grid.Row='0' Margin='0,0,0,12'>
+                                    <StackPanel>
+                                        <TextBlock Text='Cleanable Targets' FontSize='16' FontWeight='Bold' Foreground='White'/>
+                                        <TextBlock Text='Safely identified temporary files and caches' FontSize='12' Foreground='#94A3B8'/>
+                                    </StackPanel>
+                                    <StackPanel Orientation='Horizontal' HorizontalAlignment='Right'>
+                                        <Button Name='btnSelectAll' Content='Select All' Background='#1E293B' Foreground='#CBD5E1' BorderBrush='#334155' BorderThickness='1' Padding='10,4' FontSize='11' Margin='0,0,6,0' Cursor='Hand'/>
+                                        <Button Name='btnClearAll' Content='Clear' Background='#1E293B' Foreground='#CBD5E1' BorderBrush='#334155' BorderThickness='1' Padding='10,4' FontSize='11' Cursor='Hand'/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Scrollable Category Items -->
+                                <ScrollViewer Grid.Row='1' VerticalScrollBarVisibility='Auto' Margin='0,0,0,12'>
+                                    <StackPanel Name='pnlCategories'/>
+                                </ScrollViewer>
+
+                                <!-- Bottom Action Bar -->
+                                <Border Grid.Row='2' BorderBrush='#222C44' BorderThickness='0,1,0,0' Padding='0,14,0,0'>
+                                    <Grid>
+                                        <StackPanel VerticalAlignment='Center'>
+                                            <TextBlock Text='Selected to Reclaim:' FontSize='11' Foreground='#94A3B8'/>
+                                            <TextBlock Name='txtSelectedSize' Text='0.00 MB' FontSize='20' FontWeight='Bold' Foreground='#F8FAFC'/>
+                                        </StackPanel>
+                                        <Button Name='btnClean' Content='⚡ Clean Selected Storage' HorizontalAlignment='Right' Background='#6366F1' Foreground='White' BorderThickness='0' Padding='26,12' FontSize='14' FontWeight='Bold' Cursor='Hand'/>
+                                    </Grid>
+                                </Border>
                             </Grid>
                         </Border>
                     </Grid>
-                </Border>
+                </TabItem>
 
-                <!-- Live Log Console -->
-                <Border Grid.Row='1' Background='#0E1424' BorderBrush='#1E293B' BorderThickness='1' Padding='14'>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height='Auto'/>
-                            <RowDefinition Height='*'/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row='0' Orientation='Horizontal' Margin='0,0,0,6'>
-                            <Ellipse Width='7' Height='7' Fill='#06B6D4' Margin='0,0,6,0'/>
-                            <TextBlock Text='Activity Log' FontSize='11' FontWeight='SemiBold' Foreground='#94A3B8'/>
-                        </StackPanel>
-                        <TextBox Grid.Row='1' Name='txtConsole' IsReadOnly='True' Background='Transparent' Foreground='#CBD5E1' BorderThickness='0' FontFamily='Consolas' FontSize='11' VerticalScrollBarVisibility='Auto' TextWrapping='Wrap'/>
+                <!-- TAB 2: Large Files Finder -->
+                <TabItem Header='Large Files Finder'>
+                    <Border Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='20' Margin='0,14,0,0'>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height='Auto'/>
+                                <RowDefinition Height='*'/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row='0' Margin='0,0,0,14'>
+                                <StackPanel>
+                                    <TextBlock Text='Disk Space Hog Analyzer' FontSize='17' FontWeight='Bold' Foreground='White'/>
+                                    <TextBlock Name='txtLargeFilesSummary' Text='Locate large files (>100 MB) consuming your storage.' FontSize='12' Foreground='#94A3B8'/>
+                                </StackPanel>
+                                <Button Name='btnScanLargeFiles' Content='🔍 Scan for Large Files' HorizontalAlignment='Right' Background='#6366F1' Foreground='White' BorderThickness='0' Padding='16,8' FontWeight='SemiBold' Cursor='Hand'/>
+                            </Grid>
+
+                            <ScrollViewer Grid.Row='1' VerticalScrollBarVisibility='Auto'>
+                                <StackPanel Name='pnlLargeFiles'/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </TabItem>
+
+                <!-- TAB 3: Startup Optimizer -->
+                <TabItem Header='Startup Optimizer'>
+                    <Border Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='20' Margin='0,14,0,0'>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height='Auto'/>
+                                <RowDefinition Height='*'/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row='0' Margin='0,0,0,14'>
+                                <StackPanel>
+                                    <TextBlock Text='Manage Startup Applications' FontSize='17' FontWeight='Bold' Foreground='White'/>
+                                    <TextBlock Name='txtStartupSummary' Text='Disable background launchers to accelerate Windows boot speed and save RAM.' FontSize='12' Foreground='#94A3B8'/>
+                                </StackPanel>
+                                <Button Name='btnScanStartup' Content='🔄 Refresh Startup List' HorizontalAlignment='Right' Background='#1E293B' Foreground='#E2E8F0' BorderBrush='#334155' BorderThickness='1' Padding='14,8' FontWeight='SemiBold' Cursor='Hand'/>
+                            </Grid>
+
+                            <ScrollViewer Grid.Row='1' VerticalScrollBarVisibility='Auto'>
+                                <StackPanel Name='pnlStartupApps'/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </TabItem>
+
+                <!-- TAB 4: Automation & Settings -->
+                <TabItem Header='Automation &amp; Settings'>
+                    <Grid Margin='0,14,0,0'>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width='*'/>
+                            <ColumnDefinition Width='*'/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Auto-Clean Scheduler -->
+                        <Border Grid.Column='0' Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='20' Margin='0,0,12,0'>
+                            <StackPanel>
+                                <TextBlock Text='Automated Maintenance' FontSize='16' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
+                                <TextBlock Text='Schedule silent background cleaning via Windows Task Scheduler. Cleans Recycle Bin, temp files, and caches automatically.' FontSize='12' Foreground='#94A3B8' TextWrapping='Wrap' Margin='0,0,0,16'/>
+
+                                <CheckBox Name='chkAutoClean' Content='Enable Weekly Silent Auto-Clean (Sundays at 12:00 PM)' Margin='0,0,0,10'/>
+                                <Border Background='#0B1120' Padding='10' CornerRadius='8' Margin='0,0,0,16'>
+                                    <TextBlock Name='txtScheduleStatus' Text='Status: Checking schedule...' FontSize='12' Foreground='#64748B'/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Right: About & Architecture -->
+                        <Border Grid.Column='1' Background='#131A2D' BorderBrush='#222C44' BorderThickness='1' Padding='20' Margin='12,0,0,0'>
+                            <StackPanel>
+                                <TextBlock Text='About OmniClean' FontSize='16' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
+                                <TextBlock Text='Version 2.0 Universal Standalone Edition.' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,12'/>
+
+                                <TextBlock Text='• Zero dependencies, standalone portable executable.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
+                                <TextBlock Text='• Hardware-accelerated WPF interface with custom dark theme.' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,6'/>
+                                <TextBlock Text='• Open Source on GitHub: https://github.com/Junaed93/OmniClean' FontSize='12' Foreground='#818CF8' Margin='0,0,0,6'/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
-                </Border>
-            </Grid>
+                </TabItem>
+            </TabControl>
         </Grid>
-    </Grid>
+    </Border>
 </Window>";
 
                 mainWindow = (Window)XamlReader.Parse(xaml);
 
-                // Bind UI Elements
+                // Window Controls
+                titleBar = (Border)mainWindow.FindName("titleBar");
+                btnMinimize = (Button)mainWindow.FindName("btnMinimize");
+                btnMaximize = (Button)mainWindow.FindName("btnMaximize");
+                btnClose = (Button)mainWindow.FindName("btnClose");
+
+                titleBar.MouseLeftButtonDown += (s, e) => {
+                    if (e.ButtonState == MouseButtonState.Pressed) mainWindow.DragMove();
+                };
+                btnMinimize.Click += (s, e) => mainWindow.WindowState = WindowState.Minimized;
+                btnMaximize.Click += (s, e) => mainWindow.WindowState = (mainWindow.WindowState == WindowState.Maximized) ? WindowState.Normal : WindowState.Maximized;
+                btnClose.Click += (s, e) => mainWindow.Close();
+
+                // Tab 1 Bindings
                 cmbDrive = (ComboBox)mainWindow.FindName("cmbDrive");
                 diskProgress = (ProgressBar)mainWindow.FindName("diskProgress");
                 txtDiskPercent = (TextBlock)mainWindow.FindName("txtDiskPercent");
@@ -302,25 +441,40 @@ namespace OmniClean {
                 btnRescan = (Button)mainWindow.FindName("btnRescan");
                 btnSelectAll = (Button)mainWindow.FindName("btnSelectAll");
                 btnClearAll = (Button)mainWindow.FindName("btnClearAll");
-                chkAutoClean = (CheckBox)mainWindow.FindName("chkAutoClean");
-                txtScheduleStatus = (TextBlock)mainWindow.FindName("txtScheduleStatus");
                 txtConsole = (TextBox)mainWindow.FindName("txtConsole");
                 pnlCategories = (StackPanel)mainWindow.FindName("pnlCategories");
 
-                // Initialize Hardware Info dynamically
+                // Tab 2 Bindings (Large Files)
+                btnScanLargeFiles = (Button)mainWindow.FindName("btnScanLargeFiles");
+                pnlLargeFiles = (StackPanel)mainWindow.FindName("pnlLargeFiles");
+                txtLargeFilesSummary = (TextBlock)mainWindow.FindName("txtLargeFilesSummary");
+
+                // Tab 3 Bindings (Startup Apps)
+                btnScanStartup = (Button)mainWindow.FindName("btnScanStartup");
+                pnlStartupApps = (StackPanel)mainWindow.FindName("pnlStartupApps");
+                txtStartupSummary = (TextBlock)mainWindow.FindName("txtStartupSummary");
+
+                // Tab 4 Bindings (Scheduler)
+                chkAutoClean = (CheckBox)mainWindow.FindName("chkAutoClean");
+                txtScheduleStatus = (TextBlock)mainWindow.FindName("txtScheduleStatus");
+
+                // Hardware detection
                 DetectHardware();
 
-                // Initialize Drive List dynamically
+                // Drive list
                 PopulateDrives();
 
-                // Initialize Categories
+                // Categories
                 InitCategoryDefinitions();
 
-                // Attach Events
+                // Events
                 btnRescan.Click += (s, e) => { RunScanAsync(); };
                 btnSelectAll.Click += (s, e) => { SetAllCheckboxes(true); };
                 btnClearAll.Click += (s, e) => { SetAllCheckboxes(false); };
                 btnClean.Click += (s, e) => { RunCleanAsync(); };
+
+                btnScanLargeFiles.Click += (s, e) => { ScanLargeFilesAsync(); };
+                btnScanStartup.Click += (s, e) => { ScanStartupAppsAsync(); };
 
                 cmbDrive.SelectionChanged += (s, e) => {
                     if (cmbDrive.SelectedItem != null) {
@@ -334,11 +488,12 @@ namespace OmniClean {
                     ToggleScheduler(enable);
                 };
 
-                // Initial Startup
-                Log("OmniClean Universal Engine initialized.");
+                // Startup calls
+                Log("OmniClean v2.0 Pro Suite loaded.");
                 UpdateDiskMetrics();
                 CheckScheduledTask();
                 RunScanAsync();
+                ScanStartupAppsAsync();
 
                 app.Run(mainWindow);
             } catch (Exception ex) {
@@ -362,7 +517,6 @@ namespace OmniClean {
                     using (var key = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0")) {
                         if (key != null) {
                             cpu = key.GetValue("ProcessorNameString").ToString().Trim();
-                            // Simplify common CPU names
                             cpu = cpu.Replace("(R)", "").Replace("(TM)", "").Replace("Processor", "").Trim();
                         }
                     }
@@ -434,19 +588,17 @@ namespace OmniClean {
             categories.Clear();
             pnlCategories.Children.Clear();
 
-            // Universal Categories (Available on all Windows PCs)
-            AddCategory("recycle_bin", "🗑️ Windows Recycle Bin", "All files and deleted items sent to the Recycle Bin");
-            AddCategory("temp_files", "🧹 System & User Temporary Files", "Windows and application temporary cache in %TEMP% and Windows\\Temp");
-            AddCategory("browser_cache", "🌐 Web Browser Caches", "Chrome, Edge, Brave, Firefox, and Opera internet cache and shader data");
-            AddCategory("win_update", "🪟 Windows Update Download Cache", "Leftover update packages in SoftwareDistribution\\Download");
-            AddCategory("crash_dumps", "⚠️ Error Reports & Crash Dumps", "Windows Error Reporting (WER) and memory dump logs");
+            AddCategory("recycle_bin", "Windows Recycle Bin", "All files and deleted items sent to the Recycle Bin");
+            AddCategory("temp_files", "System & User Temporary Files", "Windows and application temporary cache in %TEMP% and Windows\\Temp");
+            AddCategory("browser_cache", "Web Browser Caches", "Chrome, Edge, Brave, Firefox, and Opera internet cache and shader data");
+            AddCategory("win_update", "Windows Update Download Cache", "Leftover update packages in SoftwareDistribution\\Download");
+            AddCategory("crash_dumps", "Error Reports & Crash Dumps", "Windows Error Reporting (WER) and memory dump logs");
 
-            // Developer / Gamer / Productivity Caches (Dynamically enabled if installed)
-            AddCategory("vscode_cache", "💻 VS Code Caches & Crash Dumps", "Visual Studio Code installer packages and crash logs");
-            AddCategory("dev_cache", "📦 npm & pip Package Caches", "Node.js and Python package manager cache folders");
-            AddCategory("discord_cache", "💬 Discord Client Cache", "Discord media, audio, and GPU shader caches");
-            AddCategory("capcut_old", "🎬 Outdated CapCut App Versions", "Older builds leftover in AppData\\Local\\CapCut\\Apps");
-            AddCategory("nvidia_artifacts", "🎮 NVIDIA Driver Update Packages", "Downloaded GPU driver installers in NVIDIA App UpdateFramework");
+            AddCategory("vscode_cache", "VS Code Caches & Crash Dumps", "Visual Studio Code installer packages and crash logs");
+            AddCategory("dev_cache", "npm & pip Package Caches", "Node.js and Python package manager cache folders");
+            AddCategory("discord_cache", "Discord Client Cache", "Discord media, audio, and GPU shader caches");
+            AddCategory("capcut_old", "Outdated CapCut App Versions", "Older builds leftover in AppData\\Local\\CapCut\\Apps");
+            AddCategory("nvidia_artifacts", "NVIDIA Driver Update Packages", "Downloaded GPU driver installers in NVIDIA App UpdateFramework");
         }
 
         static void AddCategory(string id, string name, string desc) {
@@ -640,14 +792,12 @@ namespace OmniClean {
                 if (Directory.Exists(root)) {
                     try {
                         foreach (var dir in Directory.GetDirectories(root)) {
-                            // Chromium Cache
                             string c1 = Path.Combine(dir, "Cache");
                             if (Directory.Exists(c1)) total += GetDirectorySizeMB(c1);
 
                             string c2 = Path.Combine(dir, "Code Cache");
                             if (Directory.Exists(c2)) total += GetDirectorySizeMB(c2);
 
-                            // Firefox cache2
                             string ff = Path.Combine(dir, "cache2");
                             if (Directory.Exists(ff)) total += GetDirectorySizeMB(ff);
                         }
@@ -698,7 +848,6 @@ namespace OmniClean {
 
                     try {
                         if (cat.Id == "recycle_bin") {
-                            // Recycle bin measure
                             string userSid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
                             string sysDrive = Path.GetPathRoot(Environment.SystemDirectory);
                             string rbPath = Path.Combine(sysDrive, "$Recycle.Bin\\" + userSid);
@@ -796,7 +945,7 @@ namespace OmniClean {
             if (isCleaning) return;
             isCleaning = true;
             btnClean.IsEnabled = false;
-            btnClean.Content = "⏳ Cleaning Storage...";
+            btnClean.Content = "Cleaning Storage...";
             Log("Starting universal optimization process...");
 
             Task.Run(new Action(() => {
@@ -862,46 +1011,275 @@ namespace OmniClean {
 
                 mainWindow.Dispatcher.Invoke(new Action(() => {
                     isCleaning = false;
-                    btnClean.Content = "⚡ Clean Selected Storage";
+                    btnClean.Content = "Clean Selected Storage";
                     UpdateDiskMetrics();
-                    Log("Universal cleanup successfully finished!");
+                    Log("Universal cleanup successfully finished.");
                     MessageBox.Show(mainWindow, "Cleanup completed successfully!\r\nStorage has been optimized on this PC.", "OmniClean Universal", MessageBoxButton.OK, MessageBoxImage.Information);
                     RunScanAsync();
                 }));
             }));
         }
 
+        // TAB 2: Large Files Scanner
+        static void ScanLargeFilesAsync() {
+            btnScanLargeFiles.IsEnabled = false;
+            btnScanLargeFiles.Content = "Scanning Drive...";
+            pnlLargeFiles.Children.Clear();
+            txtLargeFilesSummary.Text = "Scanning user folders and selected drive for files > 100 MB...";
+
+            Task.Run(new Action(() => {
+                string userDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var found = new List<LargeFileInfo>();
+                long minBytes = 100 * 1024 * 1024; // 100 MB
+
+                try {
+                    DirectoryInfo di = new DirectoryInfo(userDir);
+                    foreach (var dir in di.GetDirectories()) {
+                        if (dir.Name.StartsWith(".") && dir.Name != ".cache") continue;
+                        try {
+                            foreach (var fi in dir.GetFiles("*.*", SearchOption.AllDirectories)) {
+                                try {
+                                    if (fi.Length > minBytes) {
+                                        found.Add(new LargeFileInfo {
+                                            FilePath = fi.FullName,
+                                            FileName = fi.Name,
+                                            Bytes = fi.Length,
+                                            SizeMB = Math.Round(fi.Length / (1024.0 * 1024.0), 1)
+                                        });
+                                    }
+                                } catch { }
+                            }
+                        } catch { }
+                    }
+                } catch { }
+
+                found.Sort((a, b) => b.Bytes.CompareTo(a.Bytes));
+
+                mainWindow.Dispatcher.Invoke(new Action(() => {
+                    largeFiles = found;
+                    btnScanLargeFiles.IsEnabled = true;
+                    btnScanLargeFiles.Content = "Scan for Large Files";
+                    txtLargeFilesSummary.Text = string.Format("Found {0} files exceeding 100 MB.", found.Count);
+
+                    if (found.Count == 0) {
+                        TextBlock empty = new TextBlock();
+                        empty.Text = "No files larger than 100 MB found in scanned directories.";
+                        empty.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
+                        empty.Margin = new Thickness(0, 20, 0, 0);
+                        pnlLargeFiles.Children.Add(empty);
+                        return;
+                    }
+
+                    foreach (var item in found) {
+                        Border card = new Border();
+                        card.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x14, 0x24));
+                        card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+                        card.BorderThickness = new Thickness(1);
+                        card.Padding = new Thickness(14, 10, 14, 10);
+                        card.Margin = new Thickness(0, 0, 0, 8);
+                        card.CornerRadius = new CornerRadius(10);
+
+                        Grid grid = new Grid();
+                        grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) });
+                        grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+
+                        StackPanel sp = new StackPanel();
+                        TextBlock name = new TextBlock();
+                        name.Text = item.FileName;
+                        name.FontWeight = FontWeights.Bold;
+                        name.Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC));
+                        name.FontSize = 13;
+
+                        TextBlock path = new TextBlock();
+                        path.Text = item.FilePath;
+                        path.FontSize = 11;
+                        path.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
+                        path.TextTrimming = TextTrimming.CharacterEllipsis;
+                        path.MaxWidth = 600;
+
+                        sp.Children.Add(name);
+                        sp.Children.Add(path);
+                        Grid.SetColumn(sp, 0);
+                        grid.Children.Add(sp);
+
+                        StackPanel rightSp = new StackPanel();
+                        rightSp.Orientation = Orientation.Horizontal;
+                        rightSp.VerticalAlignment = VerticalAlignment.Center;
+
+                        Border sizeBadge = new Border();
+                        sizeBadge.Background = new SolidColorBrush(Color.FromRgb(0x23, 0x20, 0x48));
+                        sizeBadge.Padding = new Thickness(10, 4, 10, 4);
+                        sizeBadge.CornerRadius = new CornerRadius(6);
+                        sizeBadge.Margin = new Thickness(0, 0, 10, 0);
+
+                        TextBlock txtSize = new TextBlock();
+                        txtSize.Text = item.SizeMB > 1024 ? string.Format("{0:F2} GB", item.SizeMB / 1024.0) : string.Format("{0:F0} MB", item.SizeMB);
+                        txtSize.Foreground = new SolidColorBrush(Color.FromRgb(0xC0, 0x84, 0xFC));
+                        txtSize.FontWeight = FontWeights.Bold;
+                        txtSize.FontSize = 11;
+                        sizeBadge.Child = txtSize;
+
+                        Button btnShow = new Button();
+                        btnShow.Content = "Open Folder";
+                        btnShow.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+                        btnShow.Foreground = new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1));
+                        btnShow.BorderThickness = new Thickness(0);
+                        btnShow.Padding = new Thickness(10, 4, 10, 4);
+                        btnShow.FontSize = 11;
+                        btnShow.Cursor = Cursors.Hand;
+                        btnShow.Click += (s, e) => {
+                            try { Process.Start("explorer.exe", string.Format("/select,\"{0}\"", item.FilePath)); } catch { }
+                        };
+
+                        rightSp.Children.Add(sizeBadge);
+                        rightSp.Children.Add(btnShow);
+                        Grid.SetColumn(rightSp, 1);
+                        grid.Children.Add(rightSp);
+
+                        card.Child = grid;
+                        pnlLargeFiles.Children.Add(card);
+                    }
+                }));
+            }));
+        }
+
+        // TAB 3: Startup Apps Scanner
+        static void ScanStartupAppsAsync() {
+            btnScanStartup.IsEnabled = false;
+            pnlStartupApps.Children.Clear();
+            txtStartupSummary.Text = "Scanning Windows Registry startup entries...";
+
+            Task.Run(new Action(() => {
+                var list = new List<StartupAppItem>();
+
+                try {
+                    using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run")) {
+                        if (key != null) {
+                            foreach (var valName in key.GetValueNames()) {
+                                list.Add(new StartupAppItem {
+                                    Name = valName,
+                                    Command = key.GetValue(valName).ToString(),
+                                    IsEnabled = true
+                                });
+                            }
+                        }
+                    }
+                } catch { }
+
+                mainWindow.Dispatcher.Invoke(new Action(() => {
+                    startupApps = list;
+                    btnScanStartup.IsEnabled = true;
+                    txtStartupSummary.Text = string.Format("Found {0} active startup programs configured in current user registry.", list.Count);
+
+                    if (list.Count == 0) {
+                        TextBlock empty = new TextBlock();
+                        empty.Text = "No active startup applications found in user profile.";
+                        empty.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
+                        empty.Margin = new Thickness(0, 20, 0, 0);
+                        pnlStartupApps.Children.Add(empty);
+                        return;
+                    }
+
+                    foreach (var app in list) {
+                        Border card = new Border();
+                        card.Background = new SolidColorBrush(Color.FromRgb(0x0E, 0x14, 0x24));
+                        card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x29, 0x3B));
+                        card.BorderThickness = new Thickness(1);
+                        card.Padding = new Thickness(14, 10, 14, 10);
+                        card.Margin = new Thickness(0, 0, 0, 8);
+                        card.CornerRadius = new CornerRadius(10);
+
+                        Grid grid = new Grid();
+                        grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) });
+                        grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+
+                        StackPanel sp = new StackPanel();
+                        TextBlock name = new TextBlock();
+                        name.Text = app.Name;
+                        name.FontWeight = FontWeights.Bold;
+                        name.Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0xFA, 0xFC));
+                        name.FontSize = 13;
+
+                        TextBlock cmd = new TextBlock();
+                        cmd.Text = app.Command;
+                        cmd.FontSize = 11;
+                        cmd.Foreground = new SolidColorBrush(Color.FromRgb(0x64, 0x74, 0x8B));
+                        cmd.TextTrimming = TextTrimming.CharacterEllipsis;
+                        cmd.MaxWidth = 550;
+
+                        sp.Children.Add(name);
+                        sp.Children.Add(cmd);
+                        Grid.SetColumn(sp, 0);
+                        grid.Children.Add(sp);
+
+                        StackPanel rightSp = new StackPanel();
+                        rightSp.Orientation = Orientation.Horizontal;
+                        rightSp.VerticalAlignment = VerticalAlignment.Center;
+
+                        TextBlock status = new TextBlock();
+                        status.Text = "Enabled";
+                        status.Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0xB9, 0x81));
+                        status.FontWeight = FontWeights.Bold;
+                        status.FontSize = 11;
+                        status.Margin = new Thickness(0, 0, 12, 0);
+                        status.VerticalAlignment = VerticalAlignment.Center;
+
+                        Button btnToggle = new Button();
+                        btnToggle.Content = "Disable";
+                        btnToggle.Background = new SolidColorBrush(Color.FromRgb(0x3B, 0x1A, 0x22));
+                        btnToggle.Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
+                        btnToggle.BorderThickness = new Thickness(0);
+                        btnToggle.Padding = new Thickness(12, 4, 12, 4);
+                        btnToggle.FontSize = 11;
+                        btnToggle.FontWeight = FontWeights.SemiBold;
+                        btnToggle.Cursor = Cursors.Hand;
+
+                        btnToggle.Click += (s, e) => {
+                            try {
+                                using (var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true)) {
+                                    if (key != null) {
+                                        key.DeleteValue(app.Name, false);
+                                    }
+                                }
+                                card.Visibility = Visibility.Collapsed;
+                                Log("Disabled startup application: " + app.Name);
+                            } catch (Exception ex) {
+                                Log("Failed to disable startup app: " + ex.Message);
+                            }
+                        };
+
+                        rightSp.Children.Add(status);
+                        rightSp.Children.Add(btnToggle);
+                        Grid.SetColumn(rightSp, 1);
+                        grid.Children.Add(rightSp);
+
+                        card.Child = grid;
+                        pnlStartupApps.Children.Add(card);
+                    }
+                }));
+            }));
+        }
+
         static void PerformSilentCleanup() {
             try {
-                // 1. Recycle Bin
                 SHEmptyRecycleBin(IntPtr.Zero, null, SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND);
-
-                // 2. Temp
                 string winDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
                 CleanFolder(Path.GetTempPath());
                 CleanFolder(Path.Combine(winDir, "Temp"));
-
-                // 3. Browser Cache
                 CleanBrowserCaches();
-
-                // 4. Windows Update Cache
                 CleanFolder(Path.Combine(winDir, @"SoftwareDistribution\Download"));
 
-                // 5. Crash Dumps
                 string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 string progData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 CleanFolder(Path.Combine(localApp, "CrashDumps"));
                 CleanFolder(Path.Combine(progData, @"Microsoft\Windows\WER\ReportQueue"));
 
-                // 6. Dev Caches
                 CleanFolder(Path.Combine(localApp, "npm-cache"));
                 CleanFolder(Path.Combine(localApp, @"pip\cache"));
 
-                // 7. Discord Cache
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 CleanFolder(Path.Combine(appData, @"discord\Cache"));
 
-                // 8. VS Code Cache
                 string vscPath = Path.Combine(appData, "Code");
                 if (Directory.Exists(vscPath)) {
                     CleanFolder(Path.Combine(vscPath, "CachedExtensionVSIXs"));

@@ -55,7 +55,7 @@ namespace OmniClean {
     }
 
     class Program {
-        const string CURRENT_VERSION = "v1.0.0";
+        const string CURRENT_VERSION = "v1.0.1";
         const string REPO_URL = "https://github.com/Junaed93/OmniClean";
         const string RELEASES_API = "https://api.github.com/repos/Junaed93/OmniClean/releases/latest";
         const string TASK_NAME = "OmniCleanUniversalAutoClean";
@@ -380,7 +380,7 @@ namespace OmniClean {
                         </Border>
                         <TextBlock Text='OmniClean' FontSize='15' FontWeight='Bold' Foreground='#FFFFFF' VerticalAlignment='Center'/>
                         <Border Background='#231B4D' BorderBrush='#6366F1' BorderThickness='1' CornerRadius='5' Padding='5,1' Margin='8,0,0,0' VerticalAlignment='Center'>
-                            <TextBlock Text='v1.0.0 PRO' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
+                            <TextBlock Text='v1.0.1 PRO' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
                         </Border>
                     </StackPanel>
 
@@ -795,7 +795,7 @@ namespace OmniClean {
                                 <Border Grid.Column='1' Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='20' Margin='10,0,0,0'>
                                     <StackPanel>
                                         <TextBlock Text='System &amp; Application Specs' FontSize='18' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
-                                        <TextBlock Text='Version 1.0.0 Universal Standalone Edition' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,14'/>
+                                        <TextBlock Text='Version 1.0.1 Universal Standalone Edition' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,14'/>
 
                                         <Border Background='#0B101E' BorderBrush='#1A2338' BorderThickness='1' CornerRadius='8' Padding='14' Margin='0,0,0,16'>
                                             <StackPanel>
@@ -995,7 +995,7 @@ namespace OmniClean {
                 CheckForUpdatesAsync(false);
                 StartUptimeTimer();
 
-                Log("OmniClean v1.0.0 PRO initialized.");
+                Log("OmniClean v1.0.1 PRO initialized.");
                 Log(string.Format("Host OS: {0} ({1}-bit)", Environment.OSVersion, Environment.Is64BitOperatingSystem ? "64" : "32"));
                 Log("Select cleanable targets and click 'Clean Selected Storage'.");
 

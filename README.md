@@ -1,6 +1,6 @@
 # OmniClean
 
-Version: 1.0.0
+Version: 1.0.1
 Universal Windows Storage Optimizer and Performance Utility.
 
 OmniClean is a native, lightweight Windows desktop application engineered to inspect system drives, reclaim disk space from redundant caches, discover large or duplicate files, trim idle memory working sets, and optimize overall system responsiveness. It operates as a single standalone executable with zero external runtime dependencies.
@@ -137,10 +137,19 @@ $wpfDir = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
 
 ---
 
+## Release Versioning Cadence
+
+OmniClean follows a structured incremental release model:
+- Patch versions increment by 0.0.1 from .0 up to .5 (e.g., 1.0.0 -> 1.0.1 -> 1.0.2 -> 1.0.3 -> 1.0.4 -> 1.0.5).
+- Upon reaching the .5 boundary, the minor index advances (e.g., 1.0.5 -> 1.1.0 -> 1.1.1 ... -> 1.1.5 -> 1.2.0).
+- Major version increments advance with key platform milestones (e.g., 2.0.0 -> 2.0.5 -> 2.1.0 -> 3.0.0).
+
+---
+
 ## Repository and CI/CD Pipeline
 
 - **Source Repository**: `https://github.com/Junaed93/OmniClean.git`
-- **Release Automation**: GitHub Actions workflow (`.github/workflows/release.yml`) automatically compiles and attaches `OmniClean.exe` to official GitHub Releases on tag pushes (`v1.0.0`, `v*`).
+- **Release Automation**: GitHub Actions workflow (`.github/workflows/release.yml`) automatically compiles and attaches `OmniClean.exe` to official GitHub Releases on tag pushes (`v1.0.1`, `v*`).
 - **Binary Distribution**: Standalone executables are distributed exclusively through GitHub Releases; no binary `.exe` files are tracked in the Git repository tree.
 
 ---

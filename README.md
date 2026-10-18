@@ -35,20 +35,23 @@ OmniClean is a native, lightweight Windows desktop application engineered to ins
 4. **Working Set Memory Optimization**
    - Flushes idle memory pages across active processes via the Windows PSAPI `EmptyWorkingSet` subsystem.
    - Reclaims physical RAM without terminating or restarting background applications.
+   - Features real-time RAM load percentage and capacity tracking.
 
-5. **Large File Discovery**
+5. **Large File Discovery and Size Filters**
    - Scans user directories recursively to locate hidden files exceeding 100 MB.
-   - Displays file size, path, and provides an instant one-click button to reveal each file directly in Windows Explorer.
+   - Features 1-click filter pills: All (>100 MB), Media/Archives (>500 MB), and Huge (>1 GB).
+   - Displays file extension badges, file names, file paths, size badges, and provides instant buttons to reveal files in Windows Explorer or safely delete them.
 
-6. **Cryptographic Duplicate File Finder**
+6. **Cryptographic Duplicate File Finder and 1-Click Clean**
    - Employs a fast two-phase duplicate discovery algorithm:
      - Phase 1: Groups candidates by exact file byte size.
      - Phase 2: Computes SHA-256 cryptographic hashes for size-matched files to ensure 100% byte-level certainty before identifying duplicates.
-   - Tags original files and duplicate copies, allowing users to safely eliminate redundant files.
+   - Distinguishes original files with green protected badges and redundant copies with copy badges.
+   - Features a 1-click `Delete All Duplicate Copies` action that safely eliminates all duplicate files while keeping 100% of original files intact.
 
 7. **Windows Startup Application Manager**
    - Reads configured auto-launch applications from the Windows Registry (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run` and `HKLM\Software\Microsoft\Windows\CurrentVersion\Run`).
-   - Enables one-click toggling between active and disabled states to reduce system boot time.
+   - Interactive toggle switches: Click to toggle between ACTIVE (emerald badge) and DISABLED (slate badge) states to accelerate PC boot times.
 
 8. **Silent Background Automation**
    - Supports seamless integration with Windows Task Scheduler via native command line execution.
@@ -56,7 +59,7 @@ OmniClean is a native, lightweight Windows desktop application engineered to ins
 
 9. **Diagnostic Activity Logging and Export**
    - Displays real-time operation timestamps and progress details in a built-in terminal console.
-   - Provides an `Export Log` action to save cleanup histories and scan reports as standard text files.
+   - Provides `Clear` and `Export Log` actions to save cleanup histories and scan reports as standard text files.
 
 10. **Hardware and System Telemetry HUD**
     - Identifies processor architecture, core counts, CPU model, total physical RAM, and live system uptime without requiring external diagnostic tools.
@@ -95,7 +98,9 @@ OmniClean is intentionally engineered with strict safety constraints to prevent 
 
 - **Language**: C# 5 / .NET Framework 4.5+ (Natively pre-installed on Windows 10, Windows 11, and Windows Server).
 - **GUI Engine**: Windows Presentation Foundation (WPF) with dark theme and hardware acceleration.
-- **Binary Footprint**: ~104 KB standalone executable with embedded application icon.
+- **Navigation Layout**: Left Sidebar navigation with active indicator bars and dedicated workspace canvas.
+- **Interactive Feedback**: Dynamic card hover effects with illumination highlights.
+- **Binary Footprint**: ~158 KB standalone executable with embedded application icon.
 - **External Dependencies**: Zero. No NuGet dependencies, no Node.js runtime, no Python runtime.
 - **Build System**: Compiles using the native Microsoft Visual C# compiler (`csc.exe`).
 

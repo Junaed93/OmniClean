@@ -731,6 +731,7 @@ input:checked + .slider:before {
 .log-system { color: #818cf8; }
 .log-success { color: #34d399; }
 .log-warn { color: #fbbf24; }
+.log-error { color: #f87171; }
 
 /* Spinner */
 .loading-state {

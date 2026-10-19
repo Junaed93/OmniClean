@@ -1931,13 +1931,13 @@ namespace OmniClean {
         }
 
         // ================= TAB 2: DUPLICATE FINDER =================
-        static string GetPartialFileHash(string path) {
+        // Full-file SHA-256: the UI and README promise "100% byte-level
+        // certainty", so the whole stream must be hashed - not just a prefix.
+        static string GetFileHash(string path) {
             try {
                 using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var sha = SHA256.Create()) {
-                    byte[] buf = new byte[8192];
-                    int read = fs.Read(buf, 0, buf.Length);
-                    return BitConverter.ToString(sha.ComputeHash(buf, 0, read));
+                    return BitConverter.ToString(sha.ComputeHash(fs));
                 }
             } catch { return Guid.NewGuid().ToString(); }
         }
@@ -1978,7 +1978,7 @@ namespace OmniClean {
                     if (pair.Value.Count > 1) {
                         var hashMap = new Dictionary<string, List<string>>();
                         foreach (var fi in pair.Value) {
-                            string h = GetPartialFileHash(fi.FullName);
+                            string h = GetFileHash(fi.FullName);
                             if (!hashMap.ContainsKey(h)) hashMap[h] = new List<string>();
                             hashMap[h].Add(fi.FullName);
                         }

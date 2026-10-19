@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  web-tests:
+    name: Web Edition Tests
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dev dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run smoke tests
+        run: npm test
+
+  build-native:
+    name: Native Edition Compile Check
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Compile OmniClean.exe
+        shell: pwsh
+        run: |
+          $csc = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          $wpfDir = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
+
+          & $csc /target:winexe /platform:anycpu /optimize+ /lib:"$wpfDir" `
+            /r:PresentationFramework.dll /r:PresentationCore.dll /r:WindowsBase.dll `
+            /r:System.Xaml.dll /r:System.dll /r:System.Core.dll `
+            /win32icon:"app.ico" /out:"OmniClean.exe" "OmniClean.cs"
+
+          if (!(Test-Path "OmniClean.exe")) {
+            throw "Build failed: OmniClean.exe was not created."
+          }

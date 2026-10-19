@@ -1,0 +1,31 @@
+{
+  "name": "omniclean",
+  "version": "1.0.1",
+  "description": "OmniClean - Windows storage optimizer (web edition: Node.js backend, PowerShell engine, browser UI).",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "lint": "eslint .",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "windows",
+    "disk-cleaner",
+    "storage",
+    "optimizer"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Junaed93/OmniClean.git"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0"
+  }
+}

@@ -3,7 +3,16 @@
 Version: 1.0.1
 Universal Windows Storage Optimizer and Performance Utility.
 
-OmniClean is a native, lightweight Windows desktop application engineered to inspect system drives, reclaim disk space from redundant caches, discover large or duplicate files, trim idle memory working sets, and optimize overall system responsiveness. It operates as a single standalone executable with zero external runtime dependencies.
+OmniClean is a native, lightweight Windows desktop application engineered to inspect system drives, reclaim disk space from redundant caches, discover large or duplicate files, trim idle memory working sets, and optimize overall system responsiveness. It ships as a single standalone executable with zero external runtime dependencies (native edition), plus an optional local web edition.
+
+OmniClean ships in two editions that share the same goals:
+
+| Edition | Entry point | Stack |
+| :--- | :--- | :--- |
+| **Native** | `OmniClean.exe` (built from `OmniClean.cs` via `build.bat`) | C# 5 / WPF, zero runtime dependencies |
+| **Web** | `Launch.bat` (starts `server.js` + browser UI in `public/`) | Node.js backend, PowerShell engine (`scan.ps1`, `cleaner.ps1`, `targets.ps1`), browser front end |
+
+The capabilities matrix below describes the native edition in full; the web edition's feature set, API and security model are documented in the [Web Edition](#web-edition) section.
 
 ---
 
@@ -45,7 +54,7 @@ OmniClean is a native, lightweight Windows desktop application engineered to ins
 6. **Cryptographic Duplicate File Finder and 1-Click Clean**
    - Employs a fast two-phase duplicate discovery algorithm:
      - Phase 1: Groups candidates by exact file byte size.
-     - Phase 2: Computes SHA-256 cryptographic hashes for size-matched files to ensure 100% byte-level certainty before identifying duplicates.
+     - Phase 2: Computes full-file SHA-256 cryptographic hashes (streamed over the entire file) for size-matched files to ensure 100% byte-level certainty before identifying duplicates.
    - Distinguishes original files with green protected badges and redundant copies with copy badges.
    - Features a 1-click `Delete All Duplicate Copies` action that safely eliminates all duplicate files while keeping 100% of original files intact.
 
@@ -101,7 +110,7 @@ OmniClean is intentionally engineered with strict safety constraints to prevent 
 - **Navigation Layout**: Left Sidebar navigation with active indicator bars and dedicated workspace canvas.
 - **Interactive Feedback**: Dynamic card hover effects with illumination highlights.
 - **Binary Footprint**: ~158 KB standalone executable with embedded application icon.
-- **External Dependencies**: Zero. No NuGet dependencies, no Node.js runtime, no Python runtime.
+- **External Dependencies**: Zero for the native executable. No NuGet dependencies, no Python runtime, and no Node.js runtime are required to build or run `OmniClean.exe` (Node.js is only needed for the optional Web Edition).
 - **Build System**: Compiles using the native Microsoft Visual C# compiler (`csc.exe`).
 
 ---
@@ -137,6 +146,60 @@ $wpfDir = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\WPF"
 
 ---
 
+## Web Edition
+
+A local, browser-based companion built around a Node.js backend and the same PowerShell cleanup philosophy.
+
+### Requirements
+
+- Windows 10/11 (the cleanup engine is PowerShell-based)
+- Node.js 18 or newer available on `PATH`
+
+### Usage
+
+| Command | Function |
+| :--- | :--- |
+| `Launch.bat` | Starts the local engine (if not already running) and opens the UI in an app window (Chrome/Edge, falls back to the default browser). |
+| `Launch.bat stop` | Stops the background engine. |
+| `Launch.bat restart` | Restarts the background engine. |
+| `npm start` | Starts the backend directly at `http://127.0.0.1:4982`. |
+| `set PORT=5000` then `npm start` | Runs the backend on a different port. |
+| `npm test` | Runs the smoke test suite (`test/smoke.test.js`). |
+
+The engine logs to `server.log` next to `Launch.bat`.
+
+### Architecture
+
+| File | Role |
+| :--- | :--- |
+| `targets.ps1` | Single source of truth for cleanable categories, shared by scan and clean. |
+| `scan.ps1` | Emits one JSON document: disk metrics, category sizes, scheduler state, system telemetry. |
+| `cleaner.ps1` | Deletes the requested categories. Accepts `-Categories "id1,id2"` and `-DryRun` (preview only). |
+| `server.js` | Static file host + JSON API, bound to loopback only. |
+| `public/` | Browser UI. |
+
+### API
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/status` | `GET` | Disk usage, category sizes, scheduler state, system info (cached ~20 s). |
+| `/api/clean` | `POST` | Body `{"categories": ["recycle_bin", ...]}` - runs `cleaner.ps1` and returns its log lines plus refreshed disk stats. |
+| `/api/schedule` | `POST` | Body `{"enable": true}` or `{"enable": false}` - creates/removes a weekly Task Scheduler job (`StorageOptimizerAutoClean`, Sundays 12:00). |
+
+### Security Model
+
+- The server binds to `127.0.0.1` only and emits no CORS headers, so web pages other than the UI cannot read its responses.
+- Requests carrying a foreign `Host` header (DNS rebinding) or `Origin` header (cross-site request) are rejected with `403`.
+- Category ids are validated against a fixed allowlist in `server.js` and executed via `execFile` (never through a shell), so request data can never become a shell command.
+- Static file serving resolves paths and refuses anything outside `public/`.
+- `cleaner.ps1` independently re-validates its `-Categories` input and supports `-DryRun`.
+
+### Testing
+
+`npm test` starts the server on a test port and verifies the API contract, the security boundaries above, and that `cleaner.ps1` receives comma-separated categories as separate ids (a regression here would silently disable all cleaning). The only cleaner invocations in tests use `-DryRun` or an invalid id, so the suite never deletes files.
+
+---
+
 ## Release Versioning Cadence
 
 OmniClean follows a structured incremental release model:
@@ -149,6 +212,7 @@ OmniClean follows a structured incremental release model:
 ## Repository and CI/CD Pipeline
 
 - **Source Repository**: `https://github.com/Junaed93/OmniClean.git`
+- **CI Pipeline**: `.github/workflows/ci.yml` runs the web edition test suite and a native compile check on every push and pull request.
 - **Release Automation**: GitHub Actions workflow (`.github/workflows/release.yml`) automatically compiles and attaches `OmniClean.exe` to official GitHub Releases on tag pushes (`v1.0.1`, `v*`).
 - **Binary Distribution**: Standalone executables are distributed exclusively through GitHub Releases; no binary `.exe` files are tracked in the Git repository tree.
 

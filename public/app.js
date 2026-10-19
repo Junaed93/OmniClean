@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statFree = document.getElementById('stat-free');
     const statUsed = document.getElementById('stat-used');
     const statTotal = document.getElementById('stat-total');
+    const systemPill = document.getElementById('system-pill-text');
 
     const categoryList = document.getElementById('category-list');
     const selectedSizeText = document.getElementById('selected-size-text');
@@ -14,49 +15,107 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnScan = document.getElementById('btn-scan');
     const btnSelectAll = document.getElementById('btn-select-all');
     const btnDeselectAll = document.getElementById('btn-deselect-all');
-    
+
     const toggleSchedule = document.getElementById('toggle-schedule');
     const scheduleVal = document.getElementById('schedule-val');
-    
+
     const consoleOutput = document.getElementById('console-output');
     const btnClearConsole = document.getElementById('btn-clear-console');
     const toast = document.getElementById('toast');
 
+    const RING_CIRCUMFERENCE = 578; // 2 * PI * 92
+    const STATUS_TIMEOUT_MS = 130 * 1000;
+    const CLEAN_TIMEOUT_MS = 610 * 1000;
+    const SCHEDULE_TIMEOUT_MS = 30 * 1000;
+    const CLEAN_BTN_HTML = btnClean.innerHTML;
+
     let currentCategories = [];
     let selectedCategoryIds = new Set();
-    const RING_CIRCUMFERENCE = 578; // 2 * PI * 92
+    let cleanInFlight = false;
 
-    // Toast helper
+    // ---- small helpers ----
+
     function showToast(msg) {
         toast.textContent = msg;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3500);
     }
 
-    // Logger helper
+    const LOG_TYPES = new Set(['system', 'success', 'warn', 'error']);
+
     function addLog(msg, type = 'info') {
         const line = document.createElement('div');
-        line.className = `log-line ${type === 'system' ? 'log-system' : type === 'success' ? 'log-success' : type === 'warn' ? 'log-warn' : ''}`;
+        line.className = 'log-line' + (LOG_TYPES.has(type) ? ` log-${type}` : '');
         line.textContent = msg;
         consoleOutput.appendChild(line);
         consoleOutput.scrollTop = consoleOutput.scrollHeight;
     }
 
-    btnClearConsole.addEventListener('click', () => {
-        consoleOutput.innerHTML = '';
-        addLog('[Log cleared]', 'system');
-    });
+    // fetch with a hard timeout so a hung backend never leaves the UI stuck.
+    async function fetchJSON(url, options = {}, timeoutMs = 30000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const res = await fetch(url, { ...options, signal: controller.signal });
+            const text = await res.text();
+            let data = {};
+            try {
+                data = text ? JSON.parse(text) : {};
+            } catch {
+                data = { error: 'Server returned an invalid response' };
+            }
+            return { ok: res.ok, status: res.status, data };
+        } finally {
+            clearTimeout(timer);
+        }
+    }
 
-    // Update Circular Gauge
+    function formatSize(mb) {
+        return mb > 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(1)} MB`;
+    }
+
+    function applyDisk(disk) {
+        if (!disk) return;
+        statFree.textContent = `${disk.freeGB} GB`;
+        statUsed.textContent = `${disk.usedGB} GB`;
+        statTotal.textContent = `${disk.totalGB} GB`;
+        updateGauge(disk.percentFree, disk.freeGB, disk.totalGB);
+    }
+
+    function setScheduleText(enabled) {
+        scheduleVal.textContent = enabled ? 'Active (Every Sunday at 12:00 PM)' : 'Disabled';
+        scheduleVal.style.color = enabled ? '#34d399' : '#94a3b8';
+    }
+
+    function cleanHardwareText(s) {
+        return (s || '')
+            .replace(/\((R|TM)\)/gi, '')
+            .replace(/\s*@\s*[\d.]+\s*GHz.*/i, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function applySystem(system) {
+        if (!system || !systemPill) return;
+        const parts = [];
+        const cpu = cleanHardwareText(system.cpu);
+        const gpu = cleanHardwareText(system.gpu);
+        if (cpu) parts.push(cpu);
+        if (system.ramGB) parts.push(`${system.ramGB} GB RAM`);
+        if (gpu) parts.push(gpu);
+        else if (system.arch) parts.push(system.arch);
+        if (parts.length > 0) systemPill.textContent = parts.join(' • ');
+    }
+
+    // ---- gauge ----
+
     function updateGauge(percent, freeGB, totalGB) {
         gaugePercent.textContent = `${percent}%`;
         gaugeRatio.textContent = `${freeGB} GB / ${totalGB} GB`;
-        
-        // Offset calculation
+
         const offset = RING_CIRCUMFERENCE - (RING_CIRCUMFERENCE * (percent / 100));
         ringFill.style.strokeDashoffset = offset;
 
-        // Dynamic color based on free space
         if (percent < 15) {
             ringFill.style.stroke = '#f43f5e'; // red
             ringFill.style.filter = 'drop-shadow(0 0 12px rgba(244, 63, 94, 0.5))';
@@ -69,79 +128,97 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Render Categories
+    // ---- categories ----
+
+    function buildCategoryItem(cat) {
+        const isSelected = selectedCategoryIds.has(cat.id);
+        const item = document.createElement('div');
+        item.className = 'category-item' + (isSelected ? ' selected' : '');
+        item.dataset.id = cat.id;
+
+        const hasSize = cat.sizeMB > 0.1;
+        const badgeClass = hasSize ? 'has-data' : 'clean';
+
+        const left = document.createElement('div');
+        left.className = 'item-left';
+
+        const checkbox = document.createElement('div');
+        checkbox.className = 'custom-checkbox';
+        checkbox.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>';
+
+        const details = document.createElement('div');
+        details.className = 'item-details';
+        const h4 = document.createElement('h4');
+        h4.textContent = cat.name;
+        const p = document.createElement('p');
+        p.textContent = cat.desc;
+        details.append(h4, p);
+
+        left.append(checkbox, details);
+
+        const right = document.createElement('div');
+        right.className = 'item-right';
+        const badge = document.createElement('span');
+        badge.className = `size-badge ${badgeClass}`;
+        badge.textContent = hasSize ? formatSize(cat.sizeMB) : 'Clean';
+        right.appendChild(badge);
+
+        item.append(left, right);
+        return item;
+    }
+
     function renderCategories() {
         categoryList.innerHTML = '';
 
         if (!currentCategories || currentCategories.length === 0) {
-            categoryList.innerHTML = '<div class="loading-state">No categories detected.</div>';
+            const empty = document.createElement('div');
+            empty.className = 'loading-state';
+            empty.textContent = 'No categories detected.';
+            categoryList.appendChild(empty);
+            updateSelectedSummary();
             return;
         }
 
-        currentCategories.forEach(cat => {
-            const isSelected = selectedCategoryIds.has(cat.id);
-            const item = document.createElement('div');
-            item.className = `category-item ${isSelected ? 'selected' : ''}`;
-            item.dataset.id = cat.id;
-
-            const hasSize = cat.sizeMB > 0.1;
-            const sizeDisplay = hasSize ? (cat.sizeMB > 1024 ? `${(cat.sizeMB / 1024).toFixed(2)} GB` : `${cat.sizeMB.toFixed(1)} MB`) : 'Clean';
-            const badgeClass = hasSize ? 'has-data' : 'clean';
-
-            item.innerHTML = `
-                <div class="item-left">
-                    <div class="custom-checkbox">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                    </div>
-                    <div class="item-details">
-                        <h4>${cat.name}</h4>
-                        <p>${cat.desc}</p>
-                    </div>
-                </div>
-                <div class="item-right">
-                    <span class="size-badge ${badgeClass}">${sizeDisplay}</span>
-                </div>
-            `;
-
-            item.addEventListener('click', () => {
-                if (selectedCategoryIds.has(cat.id)) {
-                    selectedCategoryIds.delete(cat.id);
-                } else {
-                    selectedCategoryIds.add(cat.id);
-                }
-                renderCategories();
-                updateSelectedSummary();
-            });
-
-            categoryList.appendChild(item);
-        });
+        const fragment = document.createDocumentFragment();
+        currentCategories.forEach((cat) => fragment.appendChild(buildCategoryItem(cat)));
+        categoryList.appendChild(fragment);
 
         updateSelectedSummary();
     }
 
-    // Update Selected Size Summary
+    // Single delegated listener instead of rebinding every row on each toggle.
+    categoryList.addEventListener('click', (event) => {
+        const item = event.target.closest('.category-item');
+        if (!item || !item.dataset.id) return;
+        const id = item.dataset.id;
+
+        if (selectedCategoryIds.has(id)) {
+            selectedCategoryIds.delete(id);
+            item.classList.remove('selected');
+        } else {
+            selectedCategoryIds.add(id);
+            item.classList.add('selected');
+        }
+        updateSelectedSummary();
+    });
+
     function updateSelectedSummary() {
         let totalMB = 0;
-        currentCategories.forEach(cat => {
+        currentCategories.forEach((cat) => {
             if (selectedCategoryIds.has(cat.id)) {
                 totalMB += (cat.sizeMB || 0);
             }
         });
 
-        if (totalMB > 1024) {
-            selectedSizeText.textContent = `${(totalMB / 1024).toFixed(2)} GB`;
-        } else {
-            selectedSizeText.textContent = `${totalMB.toFixed(1)} MB`;
-        }
+        selectedSizeText.textContent = totalMB > 1024
+            ? `${(totalMB / 1024).toFixed(2)} GB`
+            : `${totalMB.toFixed(1)} MB`;
 
-        btnClean.disabled = selectedCategoryIds.size === 0;
+        btnClean.disabled = cleanInFlight || selectedCategoryIds.size === 0;
     }
 
-    // Select All / Deselect All
     btnSelectAll.addEventListener('click', () => {
-        selectedCategoryIds = new Set(currentCategories.map(c => c.id));
+        selectedCategoryIds = new Set(currentCategories.map((c) => c.id));
         renderCategories();
     });
 
@@ -150,125 +227,134 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCategories();
     });
 
-    // Fetch Status from Backend
+    btnClearConsole.addEventListener('click', () => {
+        consoleOutput.innerHTML = '';
+        addLog('[Log cleared]', 'system');
+    });
+
+    // ---- status ----
+
     async function fetchStatus() {
+        addLog('[Scanning] Checking storage metrics and junk categories...', 'system');
+        btnScan.disabled = true;
         try {
-            addLog('[Scanning] Checking storage metrics and junk categories...', 'system');
-            btnScan.disabled = true;
+            const { ok, status, data } = await fetchJSON('/api/status', {}, STATUS_TIMEOUT_MS);
 
-            const res = await fetch('/api/status');
-            const data = await res.json();
-
-            btnScan.disabled = false;
-
-            if (data.disk) {
-                statFree.textContent = `${data.disk.freeGB} GB`;
-                statUsed.textContent = `${data.disk.usedGB} GB`;
-                statTotal.textContent = `${data.disk.totalGB} GB`;
-                updateGauge(data.disk.percentFree, data.disk.freeGB, data.disk.totalGB);
+            if (!ok) {
+                addLog(`[Error] Scan failed (${status}): ${data.error || 'unknown error'}`, 'warn');
+                if (status === 403) {
+                    addLog('[Hint] Access denied - open the app via Launch.bat (http://127.0.0.1:4982).', 'warn');
+                }
+                return;
             }
+
+            applyDisk(data.disk);
+            applySystem(data.system);
 
             if (data.categories) {
                 currentCategories = data.categories;
                 // Auto-select items that have junk detected
                 selectedCategoryIds = new Set(
-                    currentCategories.filter(c => c.sizeMB > 0.5).map(c => c.id)
+                    currentCategories.filter((c) => c.sizeMB > 0.5).map((c) => c.id)
                 );
                 renderCategories();
             }
 
             if (data.scheduledTask) {
                 toggleSchedule.checked = data.scheduledTask.enabled;
-                scheduleVal.textContent = data.scheduledTask.enabled 
-                    ? 'Active (Every Sunday at 12:00 PM)' 
-                    : 'Disabled';
-                scheduleVal.style.color = data.scheduledTask.enabled ? '#34d399' : '#94a3b8';
+                setScheduleText(data.scheduledTask.enabled);
             }
 
             addLog('[Scan Complete] Storage status up to date.', 'success');
         } catch (err) {
+            const reason = err.name === 'AbortError' ? 'timed out' : err.message;
+            addLog(`[Error] Failed to connect to optimizer service: ${reason}`, 'warn');
+        } finally {
             btnScan.disabled = false;
-            addLog(`[Error] Failed to connect to optimizer service: ${err.message}`, 'warn');
         }
     }
 
     btnScan.addEventListener('click', fetchStatus);
 
-    // Clean Action
-    btnClean.addEventListener('click', async () => {
-        if (selectedCategoryIds.size === 0) return;
+    // ---- clean ----
 
-        const count = selectedCategoryIds.size;
-        addLog(`[Starting Cleanup] Purging ${count} selected categories...`, 'system');
+    btnClean.addEventListener('click', async () => {
+        if (cleanInFlight || selectedCategoryIds.size === 0) return;
+
+        cleanInFlight = true;
         btnClean.disabled = true;
-        btnClean.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> <span>Cleaning...</span>`;
+        btnClean.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;"></div> <span>Cleaning...</span>';
+        addLog(`[Starting Cleanup] Purging ${selectedCategoryIds.size} selected categories...`, 'system');
 
         try {
-            const res = await fetch('/api/clean', {
+            const { ok, status, data } = await fetchJSON('/api/clean', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ categories: Array.from(selectedCategoryIds) })
+            }, CLEAN_TIMEOUT_MS);
+
+            if (status === 409) {
+                addLog('[Busy] A cleanup is already running.', 'warn');
+                showToast('A cleanup is already running.');
+                return;
+            }
+
+            if (!ok) {
+                addLog(`[Error] Cleanup request failed (${status}): ${data.error || 'unknown error'}`, 'error');
+                showToast('Cleanup request failed.');
+                return;
+            }
+
+            (data.logs || []).forEach((line) => {
+                if (line.trim()) addLog(line, 'info');
             });
 
-            const result = await res.json();
+            applyDisk(data.disk);
 
-            btnClean.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
-                </svg>
-                <span>Clean Selected Storage</span>
-            `;
-
-            if (result.logs) {
-                result.logs.forEach(l => {
-                    if (l.trim()) addLog(l, 'info');
-                });
+            if (data.success) {
+                showToast('Cleanup completed successfully!');
+                addLog('[Success] Selected storage cleaned successfully.', 'success');
+            } else {
+                // Never report a failed run as a success.
+                showToast('Cleanup finished with errors - check the log.');
+                addLog(`[Error] Cleanup reported a failure: ${data.error || 'see log above'}`, 'error');
             }
-
-            if (result.disk) {
-                statFree.textContent = `${result.disk.freeGB} GB`;
-                statUsed.textContent = `${result.disk.usedGB} GB`;
-                statTotal.textContent = `${result.disk.totalGB} GB`;
-                updateGauge(result.disk.percentFree, result.disk.freeGB, result.disk.totalGB);
-            }
-
-            showToast('Cleanup completed successfully!');
-            addLog('[Success] Selected storage cleaned successfully.', 'success');
-
-            // Refresh categories
-            setTimeout(fetchStatus, 1000);
         } catch (err) {
-            btnClean.disabled = false;
-            btnClean.innerHTML = `<span>Clean Selected Storage</span>`;
-            addLog(`[Error] Cleanup failed: ${err.message}`, 'warn');
+            const reason = err.name === 'AbortError' ? 'timed out' : err.message;
+            addLog(`[Error] Cleanup failed: ${reason}`, 'error');
             showToast('Cleanup encountered an error.');
+        } finally {
+            cleanInFlight = false;
+            btnClean.innerHTML = CLEAN_BTN_HTML;
+            updateSelectedSummary();
+            setTimeout(fetchStatus, 1000);
         }
     });
 
-    // Schedule Toggle
+    // ---- schedule ----
+
     toggleSchedule.addEventListener('change', async () => {
         const isEnabled = toggleSchedule.checked;
         scheduleVal.textContent = isEnabled ? 'Enabling...' : 'Disabling...';
 
         try {
-            const res = await fetch('/api/schedule', {
+            const { ok, data } = await fetchJSON('/api/schedule', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ enable: isEnabled })
-            });
+            }, SCHEDULE_TIMEOUT_MS);
 
-            const result = await res.json();
-            if (result.success) {
-                scheduleVal.textContent = isEnabled 
-                    ? 'Active (Every Sunday at 12:00 PM)' 
-                    : 'Disabled';
-                scheduleVal.style.color = isEnabled ? '#34d399' : '#94a3b8';
-                showToast(isEnabled ? 'Auto-Clean scheduled every Sunday at 12:00 PM!' : 'Auto-Clean schedule removed.');
-                addLog(`[Scheduler] Auto-clean ${isEnabled ? 'activated' : 'deactivated'} in Windows Task Scheduler.`, 'success');
+            if (!ok || !data.success) {
+                throw new Error(data.error || 'request failed');
             }
+
+            setScheduleText(isEnabled);
+            showToast(isEnabled ? 'Auto-Clean scheduled every Sunday at 12:00 PM!' : 'Auto-Clean schedule removed.');
+            addLog(`[Scheduler] Auto-clean ${isEnabled ? 'activated' : 'deactivated'} in Windows Task Scheduler.`, 'success');
         } catch (err) {
             toggleSchedule.checked = !isEnabled;
             scheduleVal.textContent = 'Error updating schedule';
+            scheduleVal.style.color = '#f87171';
             addLog(`[Scheduler Error] ${err.message}`, 'warn');
         }
     });

@@ -55,7 +55,7 @@ namespace OmniClean {
     }
 
     class Program {
-        const string CURRENT_VERSION = "v1.0.1";
+        const string CURRENT_VERSION = "v1.0.3";
         const string REPO_URL = "https://github.com/Junaed93/OmniClean";
         const string RELEASES_API = "https://api.github.com/repos/Junaed93/OmniClean/releases/latest";
         const string TASK_NAME = "OmniCleanUniversalAutoClean";
@@ -208,8 +208,60 @@ namespace OmniClean {
         AllowsTransparency='True'
         Background='Transparent'
         Foreground='#F8FAFC'
-        FontFamily='Segoe UI'>
+        FontFamily='Segoe UI'
+        UseLayoutRounding='True'
+        TextOptions.TextFormattingMode='Display'>
     <Window.Resources>
+        <!-- ============ v1.0.3 Visual Refresh: Shared Gradient Brushes ============ -->
+        <LinearGradientBrush x:Key='BrushWindowBg' StartPoint='0,0' EndPoint='1,1'>
+            <GradientStop Color='#0C1122' Offset='0'/>
+            <GradientStop Color='#070B15' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushTitleBar' StartPoint='0,0' EndPoint='0,1'>
+            <GradientStop Color='#0E1428' Offset='0'/>
+            <GradientStop Color='#0C1120' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushSidebar' StartPoint='0,0' EndPoint='0,1'>
+            <GradientStop Color='#0D1426' Offset='0'/>
+            <GradientStop Color='#0A0F1E' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushCard' StartPoint='0,0' EndPoint='0,1'>
+            <GradientStop Color='#131B31' Offset='0'/>
+            <GradientStop Color='#0F1626' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushInnerPanel' StartPoint='0,0' EndPoint='0,1'>
+            <GradientStop Color='#0C1220' Offset='0'/>
+            <GradientStop Color='#0A0F1C' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushHealthCard' StartPoint='0,0' EndPoint='1,1'>
+            <GradientStop Color='#111A31' Offset='0'/>
+            <GradientStop Color='#0D1424' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushAccent' StartPoint='0,0' EndPoint='1,1'>
+            <GradientStop Color='#6366F1' Offset='0'/>
+            <GradientStop Color='#8B5CF6' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushAccentHover' StartPoint='0,0' EndPoint='1,1'>
+            <GradientStop Color='#4F46E5' Offset='0'/>
+            <GradientStop Color='#7C3AED' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushTitleText' StartPoint='0,0' EndPoint='1,0'>
+            <GradientStop Color='#FFFFFF' Offset='0'/>
+            <GradientStop Color='#C7D2FE' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushProgressMint' StartPoint='0,0' EndPoint='1,0'>
+            <GradientStop Color='#10B981' Offset='0'/>
+            <GradientStop Color='#34D399' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushProgressSky' StartPoint='0,0' EndPoint='1,0'>
+            <GradientStop Color='#0EA5E9' Offset='0'/>
+            <GradientStop Color='#38BDF8' Offset='1'/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key='BrushBannerUpdate' StartPoint='0,0' EndPoint='1,0'>
+            <GradientStop Color='#1B1840' Offset='0'/>
+            <GradientStop Color='#251C4C' Offset='1'/>
+        </LinearGradientBrush>
+
         <Style TargetType='Border'>
             <Setter Property='CornerRadius' Value='12'/>
         </Style>
@@ -218,6 +270,28 @@ namespace OmniClean {
             <Setter Property='FontSize' Value='13'/>
             <Setter Property='VerticalContentAlignment' Value='Center'/>
             <Setter Property='Cursor' Value='Hand'/>
+            <Setter Property='Template'>
+                <Setter.Value>
+                    <ControlTemplate TargetType='CheckBox'>
+                        <StackPanel Orientation='Horizontal' Background='Transparent'>
+                            <Border Name='box' Width='17' Height='17' CornerRadius='5' BorderBrush='#475569' BorderThickness='1.5' Background='Transparent' VerticalAlignment='Center'>
+                                <Path Name='glyph' Data='M 3.5 8.5 L 7 11.5 L 13 4.5' Stroke='White' StrokeThickness='2' StrokeStartLineCap='Round' StrokeEndLineCap='Round' Visibility='Collapsed'/>
+                            </Border>
+                            <ContentPresenter Margin='8,0,0,0' VerticalAlignment='Center'/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property='IsChecked' Value='True'>
+                                <Setter TargetName='box' Property='Background' Value='{StaticResource BrushAccent}'/>
+                                <Setter TargetName='box' Property='BorderBrush' Value='{StaticResource BrushAccent}'/>
+                                <Setter TargetName='glyph' Property='Visibility' Value='Visible'/>
+                            </Trigger>
+                            <Trigger Property='IsMouseOver' Value='True'>
+                                <Setter TargetName='box' Property='BorderBrush' Value='#94A3B8'/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Sidebar Navigation Button Style -->
@@ -239,7 +313,7 @@ namespace OmniClean {
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property='IsMouseOver' Value='True'>
-                                <Setter TargetName='bdr' Property='Background' Value='#1E293B'/>
+                                <Setter TargetName='bdr' Property='Background' Value='#1A2440'/>
                                 <Setter Property='Foreground' Value='#FFFFFF'/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -250,7 +324,7 @@ namespace OmniClean {
 
         <!-- Primary Action Button Style -->
         <Style x:Key='PrimaryBtn' TargetType='Button'>
-            <Setter Property='Background' Value='#6366F1'/>
+            <Setter Property='Background' Value='{StaticResource BrushAccent}'/>
             <Setter Property='Foreground' Value='White'/>
             <Setter Property='FontSize' Value='13'/>
             <Setter Property='FontWeight' Value='Bold'/>
@@ -260,12 +334,15 @@ namespace OmniClean {
             <Setter Property='Template'>
                 <Setter.Value>
                     <ControlTemplate TargetType='Button'>
-                        <Border Name='bdr' Background='{TemplateBinding Background}' CornerRadius='8' Padding='{TemplateBinding Padding}'>
+                        <Border Name='bdr' Background='{TemplateBinding Background}' CornerRadius='9' Padding='{TemplateBinding Padding}'>
+                            <Border.Effect>
+                                <DropShadowEffect Color='#4F46E5' BlurRadius='18' ShadowDepth='0' Opacity='0.45'/>
+                            </Border.Effect>
                             <ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property='IsMouseOver' Value='True'>
-                                <Setter TargetName='bdr' Property='Background' Value='#4F46E5'/>
+                                <Setter TargetName='bdr' Property='Background' Value='{StaticResource BrushAccentHover}'/>
                             </Trigger>
                             <Trigger Property='IsPressed' Value='True'>
                                 <Setter TargetName='bdr' Property='Background' Value='#4338CA'/>
@@ -345,7 +422,7 @@ namespace OmniClean {
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property='IsMouseOver' Value='True'>
-                                <Setter TargetName='bdr' Property='Background' Value='#DC2626'/>
+                                <Setter TargetName='bdr' Property='Background' Value='#E11D48'/>
                                 <Setter Property='Foreground' Value='#FFFFFF'/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -356,7 +433,10 @@ namespace OmniClean {
     </Window.Resources>
 
     <!-- Outer Glassmorphic Frame -->
-    <Border Background='#0A0E1A' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='16'>
+    <Border Background='{StaticResource BrushWindowBg}' BorderBrush='#223050' BorderThickness='1' CornerRadius='16'>
+        <Border.Effect>
+            <DropShadowEffect Color='#000000' BlurRadius='40' ShadowDepth='8' Direction='270' Opacity='0.5'/>
+        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height='46'/>
@@ -365,7 +445,7 @@ namespace OmniClean {
             </Grid.RowDefinitions>
 
             <!-- Top Titlebar / Header -->
-            <Border Grid.Row='0' Name='titleBar' Background='#0D1324' BorderBrush='#1A2338' BorderThickness='0,0,0,1' Padding='16,0' Cursor='SizeAll'>
+            <Border Grid.Row='0' Name='titleBar' Background='{StaticResource BrushTitleBar}' BorderBrush='#1E2943' BorderThickness='0,0,0,1' Padding='16,0' Cursor='SizeAll'>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width='Auto'/>
@@ -375,12 +455,15 @@ namespace OmniClean {
 
                     <!-- Brand & Version -->
                     <StackPanel Grid.Column='0' Orientation='Horizontal' VerticalAlignment='Center'>
-                        <Border Width='28' Height='28' Background='#6366F1' CornerRadius='8' Margin='0,0,10,0'>
+                        <Border Width='28' Height='28' Background='{StaticResource BrushAccent}' CornerRadius='8' Margin='0,0,10,0'>
+                            <Border.Effect>
+                                <DropShadowEffect Color='#6366F1' BlurRadius='10' ShadowDepth='0' Opacity='0.5'/>
+                            </Border.Effect>
                             <TextBlock Text='⚡' FontSize='15' Foreground='White' HorizontalAlignment='Center' VerticalAlignment='Center'/>
                         </Border>
                         <TextBlock Text='OmniClean' FontSize='15' FontWeight='Bold' Foreground='#FFFFFF' VerticalAlignment='Center'/>
-                        <Border Background='#231B4D' BorderBrush='#6366F1' BorderThickness='1' CornerRadius='5' Padding='5,1' Margin='8,0,0,0' VerticalAlignment='Center'>
-                            <TextBlock Text='v1.0.1 PRO' FontSize='9' FontWeight='Bold' Foreground='#A5B4FC'/>
+                        <Border Background='#241D57' BorderBrush='#818CF8' BorderThickness='1' CornerRadius='7' Padding='7,2' Margin='8,0,0,0' VerticalAlignment='Center'>
+                            <TextBlock Text='v1.0.3 PRO' FontSize='9' FontWeight='Bold' Foreground='#C7D2FE'/>
                         </Border>
                     </StackPanel>
 
@@ -404,7 +487,7 @@ namespace OmniClean {
             </Border>
 
             <!-- Update Available Notification Banner -->
-            <Border Grid.Row='1' Name='bannerUpdate' Background='#1E1A38' BorderBrush='#6366F1' BorderThickness='0,0,0,1' Padding='16,8' Visibility='Collapsed'>
+            <Border Grid.Row='1' Name='bannerUpdate' Background='{StaticResource BrushBannerUpdate}' BorderBrush='{StaticResource BrushAccent}' BorderThickness='0,0,0,1' Padding='16,8' Visibility='Collapsed'>
                 <Grid>
                     <StackPanel Orientation='Horizontal' VerticalAlignment='Center'>
                         <TextBlock Text='⭐' FontSize='14' Margin='0,0,8,0'/>
@@ -422,7 +505,7 @@ namespace OmniClean {
                 </Grid.ColumnDefinitions>
 
                 <!-- LEFT SIDEBAR -->
-                <Border Grid.Column='0' Background='#0C1222' BorderBrush='#1B253B' BorderThickness='0,0,1,0' Padding='12,14'>
+                <Border Grid.Column='0' Background='{StaticResource BrushSidebar}' BorderBrush='#1E2943' BorderThickness='0,0,1,0' Padding='12,14'>
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height='*'/>
@@ -431,7 +514,7 @@ namespace OmniClean {
 
                         <!-- Navigation Items -->
                         <StackPanel Grid.Row='0'>
-                            <TextBlock Text='NAVIGATION' FontSize='10' FontWeight='Bold' Foreground='#475569' Margin='10,0,0,10'/>
+                            <TextBlock Text='NAVIGATION' FontSize='10' FontWeight='Bold' Foreground='#5B6B8C' Margin='10,0,0,10'/>
 
                             <!-- Nav 0: Storage Cleaner -->
                             <Button Name='btnNavCleaner' Style='{StaticResource SidebarNavBtn}'>
@@ -500,7 +583,7 @@ namespace OmniClean {
                         </StackPanel>
 
                         <!-- Bottom Sidebar: Live Telemetry Widget -->
-                        <Border Grid.Row='1' Background='#10182C' BorderBrush='#1E293B' BorderThickness='1' CornerRadius='10' Padding='12,10'>
+                        <Border Grid.Row='1' Background='{StaticResource BrushHealthCard}' BorderBrush='#223050' BorderThickness='1' CornerRadius='10' Padding='12,10'>
                             <StackPanel>
                                 <TextBlock Text='SYSTEM HEALTH' FontSize='10' FontWeight='Bold' Foreground='#64748B' Margin='0,0,0,6'/>
                                 <TextBlock Name='txtSidebarCpu' Text='CPU: Detecting...' FontSize='11' FontWeight='SemiBold' Foreground='#CBD5E1' TextTrimming='CharacterEllipsis' Margin='0,0,0,4'/>
@@ -508,7 +591,7 @@ namespace OmniClean {
                                 <Grid Margin='0,0,0,4'>
                                     <TextBlock Name='txtSidebarRam' Text='RAM: -- / -- GB' FontSize='11' Foreground='#94A3B8'/>
                                 </Grid>
-                                <ProgressBar Name='barSidebarRam' Height='6' Value='40' Maximum='100' Foreground='#38BDF8' Background='#090E1A' BorderThickness='0' Margin='0,0,0,8'/>
+                                <ProgressBar Name='barSidebarRam' Height='8' Value='40' Maximum='100' Foreground='{StaticResource BrushProgressSky}' Background='#080D18' BorderThickness='0' Margin='0,0,0,8'/>
 
                                 <Button Name='btnQuickFlushRam' Content='⚡ Flush Standby RAM' Style='{StaticResource SecondaryBtn}' Padding='8,4' FontSize='10' HorizontalAlignment='Stretch'/>
                                 
@@ -538,11 +621,11 @@ namespace OmniClean {
                                 <!-- Header Bar: View Title + Drive Selector + Top Actions -->
                                 <Grid Grid.Row='0' Margin='0,0,0,14'>
                                     <StackPanel VerticalAlignment='Center'>
-                                        <TextBlock Text='Storage Cleaner' FontSize='20' FontWeight='Bold' Foreground='#FFFFFF'/>
+                                        <TextBlock Text='Storage Cleaner' FontSize='20' FontWeight='Bold' Foreground='{StaticResource BrushTitleText}'/>
                                         <TextBlock Text='Inspect drives and safely purge redundant caches and temporary storage' FontSize='12' Foreground='#94A3B8'/>
                                     </StackPanel>
                                     <StackPanel Orientation='Horizontal' HorizontalAlignment='Right' VerticalAlignment='Center'>
-                                        <Border Background='#11192C' BorderBrush='#222F48' BorderThickness='1' CornerRadius='7' Padding='8,4' Margin='0,0,8,0'>
+                                        <Border Background='#131C33' BorderBrush='#2A3B5E' BorderThickness='1' CornerRadius='7' Padding='8,4' Margin='0,0,8,0'>
                                             <StackPanel Orientation='Horizontal' VerticalAlignment='Center'>
                                                 <TextBlock Text='Drive:' FontSize='12' FontWeight='Bold' Foreground='#94A3B8' VerticalAlignment='Center' Margin='0,0,6,0'/>
                                                 <ComboBox Name='cmbDrive' Width='110' Height='24' Background='#0E1424' Foreground='#F8FAFC' BorderThickness='0'/>
@@ -568,12 +651,15 @@ namespace OmniClean {
                                         </Grid.RowDefinitions>
 
                                         <!-- Disk Space Hero Card -->
-                                        <Border Grid.Row='0' Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='16' Margin='0,0,0,12'>
+                                        <Border Grid.Row='0' Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='16' Margin='0,0,0,12'>
+                                            <Border.Effect>
+                                                <DropShadowEffect Color='#000000' BlurRadius='24' ShadowDepth='3' Direction='270' Opacity='0.30'/>
+                                            </Border.Effect>
                                             <StackPanel>
                                                 <TextBlock Text='DRIVE CAPACITY' FontSize='10' FontWeight='Bold' Foreground='#64748B' Margin='0,0,0,6'/>
                                                 <TextBlock Name='txtDiskPercent' Text='--% Free' FontSize='32' FontWeight='Bold' Foreground='#10B981' Margin='0,0,0,2'/>
                                                 <TextBlock Name='txtDiskRatio' Text='-- GB Free / -- GB' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,10'/>
-                                                <ProgressBar Name='diskProgress' Height='10' Value='30' Maximum='100' Foreground='#10B981' Background='#0A0E1A' BorderThickness='0' Margin='0,0,0,14'/>
+                                                <ProgressBar Name='diskProgress' Height='12' Value='30' Maximum='100' Foreground='{StaticResource BrushProgressMint}' Background='#080D18' BorderThickness='0' Margin='0,0,0,14'/>
 
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -604,7 +690,7 @@ namespace OmniClean {
                                         </Border>
 
                                         <!-- Live Diagnostic Activity Console -->
-                                        <Border Grid.Row='1' Background='#0B101E' BorderBrush='#1A2338' BorderThickness='1' Padding='12'>
+                                        <Border Grid.Row='1' Background='{StaticResource BrushInnerPanel}' BorderBrush='#1C2942' BorderThickness='1' Padding='12'>
                                             <Grid>
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height='Auto'/>
@@ -626,7 +712,10 @@ namespace OmniClean {
                                     </Grid>
 
                                     <!-- Right Column: Cleanable Targets & Bottom Action Dock -->
-                                    <Border Grid.Column='1' Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='16'>
+                                    <Border Grid.Column='1' Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='16'>
+                                        <Border.Effect>
+                                            <DropShadowEffect Color='#000000' BlurRadius='24' ShadowDepth='3' Direction='270' Opacity='0.30'/>
+                                        </Border.Effect>
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height='Auto'/>
@@ -659,7 +748,7 @@ namespace OmniClean {
                                             </ScrollViewer>
 
                                             <!-- Bottom Action Dock -->
-                                            <Border Grid.Row='3' Background='#0B101E' BorderBrush='#1E293B' BorderThickness='1' Padding='14,10' CornerRadius='10'>
+                                            <Border Grid.Row='3' Background='{StaticResource BrushInnerPanel}' BorderBrush='#243252' BorderThickness='1' Padding='14,10' CornerRadius='10'>
                                                 <Grid>
                                                     <StackPanel VerticalAlignment='Center'>
                                                         <TextBlock Text='Selected to Reclaim:' FontSize='11' Foreground='#94A3B8'/>
@@ -679,7 +768,7 @@ namespace OmniClean {
 
                         <!-- ================= TAB 1: LARGE FILES FINDER ================= -->
                         <TabItem>
-                            <Border Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='18'>
+                            <Border Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='18'>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height='Auto'/>
@@ -690,7 +779,7 @@ namespace OmniClean {
                                     <!-- Header -->
                                     <Grid Grid.Row='0' Margin='0,0,0,14'>
                                         <StackPanel>
-                                            <TextBlock Text='Large Files Profiler' FontSize='20' FontWeight='Bold' Foreground='White'/>
+                                            <TextBlock Text='Large Files Profiler' FontSize='20' FontWeight='Bold' Foreground='{StaticResource BrushTitleText}'/>
                                             <TextBlock Name='txtLargeFilesSummary' Text='Discover large files (>100 MB) consuming your storage space.' FontSize='12' Foreground='#94A3B8'/>
                                         </StackPanel>
                                         <Button Name='btnScanLargeFiles' Content='🔍 Scan for Large Files' Style='{StaticResource PrimaryBtn}' HorizontalAlignment='Right' Padding='18,8'/>
@@ -713,7 +802,7 @@ namespace OmniClean {
 
                         <!-- ================= TAB 2: DUPLICATE FINDER ================= -->
                         <TabItem>
-                            <Border Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='18'>
+                            <Border Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='18'>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height='Auto'/>
@@ -723,7 +812,7 @@ namespace OmniClean {
                                     <!-- Header -->
                                     <Grid Grid.Row='0' Margin='0,0,0,14'>
                                         <StackPanel>
-                                            <TextBlock Text='Cryptographic Duplicate Finder' FontSize='20' FontWeight='Bold' Foreground='White'/>
+                                            <TextBlock Text='Cryptographic Duplicate Finder' FontSize='20' FontWeight='Bold' Foreground='{StaticResource BrushTitleText}'/>
                                             <TextBlock Name='txtDuplicatesSummary' Text='Scans user folders for 100% byte-matched duplicate files using SHA-256 cryptographic hashing.' FontSize='12' Foreground='#94A3B8'/>
                                         </StackPanel>
                                         <StackPanel Orientation='Horizontal' HorizontalAlignment='Right'>
@@ -741,7 +830,7 @@ namespace OmniClean {
 
                         <!-- ================= TAB 3: STARTUP OPTIMIZER ================= -->
                         <TabItem>
-                            <Border Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='18'>
+                            <Border Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='18'>
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height='Auto'/>
@@ -751,7 +840,7 @@ namespace OmniClean {
                                     <!-- Header -->
                                     <Grid Grid.Row='0' Margin='0,0,0,14'>
                                         <StackPanel>
-                                            <TextBlock Text='Startup Applications Optimizer' FontSize='20' FontWeight='Bold' Foreground='White'/>
+                                            <TextBlock Text='Startup Applications Optimizer' FontSize='20' FontWeight='Bold' Foreground='{StaticResource BrushTitleText}'/>
                                             <TextBlock Name='txtStartupSummary' Text='Manage background launchers in Windows Registry to speed up PC boot time and reduce idle RAM.' FontSize='12' Foreground='#94A3B8'/>
                                         </StackPanel>
                                         <Button Name='btnScanStartup' Content='🔄 Refresh Startup List' Style='{StaticResource SecondaryBtn}' HorizontalAlignment='Right' Padding='14,8'/>
@@ -773,12 +862,15 @@ namespace OmniClean {
                                 </Grid.ColumnDefinitions>
 
                                 <!-- Left Card: Maintenance Automation -->
-                                <Border Grid.Column='0' Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='20' Margin='0,0,10,0'>
+                                <Border Grid.Column='0' Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='20' Margin='0,0,10,0'>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color='#000000' BlurRadius='24' ShadowDepth='3' Direction='270' Opacity='0.30'/>
+                                    </Border.Effect>
                                     <StackPanel>
                                         <TextBlock Text='Automated Maintenance' FontSize='18' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
                                         <TextBlock Text='Schedule silent background cleaning via Windows Task Scheduler. Cleans Recycle Bin, temp files, and caches automatically without any user interaction.' FontSize='12' Foreground='#94A3B8' TextWrapping='Wrap' Margin='0,0,0,16'/>
 
-                                        <Border Background='#0B101E' BorderBrush='#1A2338' BorderThickness='1' CornerRadius='8' Padding='14' Margin='0,0,0,16'>
+                                        <Border Background='{StaticResource BrushInnerPanel}' BorderBrush='#1C2942' BorderThickness='1' CornerRadius='8' Padding='14' Margin='0,0,0,16'>
                                             <StackPanel>
                                                 <CheckBox Name='chkAutoClean' Content='Enable Weekly Silent Auto-Clean (Sundays at 12:00 PM)' Margin='0,0,0,8'/>
                                                 <TextBlock Name='txtScheduleStatus' Text='Status: Checking schedule...' FontSize='11' Foreground='#64748B'/>
@@ -792,12 +884,15 @@ namespace OmniClean {
                                 </Border>
 
                                 <!-- Right Card: About & Hardware Telemetry -->
-                                <Border Grid.Column='1' Background='#11182B' BorderBrush='#1F2B45' BorderThickness='1' Padding='20' Margin='10,0,0,0'>
+                                <Border Grid.Column='1' Background='{StaticResource BrushCard}' BorderBrush='#223050' BorderThickness='1' Padding='20' Margin='10,0,0,0'>
+                                    <Border.Effect>
+                                        <DropShadowEffect Color='#000000' BlurRadius='24' ShadowDepth='3' Direction='270' Opacity='0.30'/>
+                                    </Border.Effect>
                                     <StackPanel>
                                         <TextBlock Text='System &amp; Application Specs' FontSize='18' FontWeight='Bold' Foreground='White' Margin='0,0,0,6'/>
-                                        <TextBlock Text='Version 1.0.1 Universal Standalone Edition' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,14'/>
+                                        <TextBlock Text='Version 1.0.3 Universal Standalone Edition' FontSize='12' Foreground='#94A3B8' Margin='0,0,0,14'/>
 
-                                        <Border Background='#0B101E' BorderBrush='#1A2338' BorderThickness='1' CornerRadius='8' Padding='14' Margin='0,0,0,16'>
+                                        <Border Background='{StaticResource BrushInnerPanel}' BorderBrush='#1C2942' BorderThickness='1' CornerRadius='8' Padding='14' Margin='0,0,0,16'>
                                             <StackPanel>
                                                 <TextBlock Name='txtSysSpecOs' Text='OS: Windows' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,4'/>
                                                 <TextBlock Name='txtSysSpecCpu' Text='CPU: Detecting...' FontSize='12' Foreground='#CBD5E1' Margin='0,0,0,4'/>
@@ -995,7 +1090,7 @@ namespace OmniClean {
                 CheckForUpdatesAsync(false);
                 StartUptimeTimer();
 
-                Log("OmniClean v1.0.1 PRO initialized.");
+                Log("OmniClean v1.0.3 PRO initialized.");
                 Log(string.Format("Host OS: {0} ({1}-bit)", Environment.OSVersion, Environment.Is64BitOperatingSystem ? "64" : "32"));
                 Log("Select cleanable targets and click 'Clean Selected Storage'.");
 
@@ -1029,9 +1124,28 @@ namespace OmniClean {
         static void SetNavState(Button btn, Border bar, bool isActive) {
             if (btn == null || bar == null) return;
             bar.Visibility = isActive ? Visibility.Visible : Visibility.Collapsed;
-            btn.Background = isActive ? new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B)) : Brushes.Transparent;
+            btn.Background = isActive
+                ? (Brush)new LinearGradientBrush(Color.FromRgb(0x1A, 0x24, 0x40), Color.FromRgb(0x14, 0x1D, 0x34), 90.0)
+                : Brushes.Transparent;
+            bar.Background = isActive
+                ? (Brush)new LinearGradientBrush(Color.FromRgb(0x81, 0x8C, 0xF8), Color.FromRgb(0x63, 0x66, 0xF1), 90.0)
+                : new SolidColorBrush(Color.FromRgb(0x63, 0x66, 0xF1));
             btn.Foreground = isActive ? Brushes.White : new SolidColorBrush(Color.FromRgb(0x94, 0xA3, 0xB8));
             btn.FontWeight = isActive ? FontWeights.Bold : FontWeights.SemiBold;
+        }
+
+        // ---- UI brush helpers (shared by all dynamically generated cards) ----
+        static Brush CardBgBrush() {
+            return new LinearGradientBrush(Color.FromRgb(0x11, 0x1A, 0x31), Color.FromRgb(0x0D, 0x14, 0x24), 90.0);
+        }
+        static Brush CardHoverBrush() {
+            return new LinearGradientBrush(Color.FromRgb(0x16, 0x21, 0x3C), Color.FromRgb(0x12, 0x1A, 0x30), 90.0);
+        }
+        static Brush CardBorderBrush() {
+            return new SolidColorBrush(Color.FromRgb(0x22, 0x30, 0x50));
+        }
+        static Brush CardHoverBorderBrush() {
+            return new SolidColorBrush(Color.FromRgb(0x63, 0x66, 0xF1));
         }
 
         static void StartUptimeTimer() {
@@ -1154,7 +1268,8 @@ namespace OmniClean {
                         var match = Regex.Match(json, "\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
                         if (match.Success) {
                             string latestTag = match.Groups[1].Value.Trim();
-                            bool isNew = !string.Equals(latestTag, CURRENT_VERSION, StringComparison.OrdinalIgnoreCase);
+                            // Normalize a leading "v" so tags like "1.0.3" and "v1.0.3" compare as equal.
+                            bool isNew = !string.Equals(latestTag.TrimStart('v', 'V'), CURRENT_VERSION.TrimStart('v', 'V'), StringComparison.OrdinalIgnoreCase);
 
                             mainWindow.Dispatcher.Invoke(new Action(() => {
                                 if (isNew) {
@@ -1251,8 +1366,8 @@ namespace OmniClean {
 
         static void AddCategory(string id, string name, string desc, string icon, string iconBgHex) {
             Border card = new Border();
-            card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-            card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+            card.Background = CardBgBrush();
+            card.BorderBrush = CardBorderBrush();
             card.BorderThickness = new Thickness(1);
             card.Padding = new Thickness(14, 11, 14, 11);
             card.Margin = new Thickness(0, 0, 0, 7);
@@ -1261,12 +1376,12 @@ namespace OmniClean {
 
             // Interactive hover highlight
             card.MouseEnter += (s, e) => {
-                card.Background = new SolidColorBrush(Color.FromRgb(0x15, 0x1F, 0x34));
-                card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                card.Background = CardHoverBrush();
+                card.BorderBrush = CardHoverBorderBrush();
             };
             card.MouseLeave += (s, e) => {
-                card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                card.Background = CardBgBrush();
+                card.BorderBrush = CardBorderBrush();
             };
 
             Grid grid = new Grid();
@@ -1288,12 +1403,28 @@ namespace OmniClean {
             StackPanel titleRow = new StackPanel();
             titleRow.Orientation = Orientation.Horizontal;
 
+            // Icon chip tinted with the category color
+            Color chipColor;
+            try { chipColor = (Color)ColorConverter.ConvertFromString(iconBgHex); } catch { chipColor = Color.FromRgb(0x63, 0x66, 0xF1); }
+
+            Border iconChip = new Border();
+            iconChip.Width = 26;
+            iconChip.Height = 26;
+            iconChip.CornerRadius = new CornerRadius(8);
+            iconChip.Margin = new Thickness(0, 0, 10, 0);
+            iconChip.VerticalAlignment = VerticalAlignment.Center;
+            iconChip.Background = new SolidColorBrush(Color.FromArgb(0x26, chipColor.R, chipColor.G, chipColor.B));
+            iconChip.BorderBrush = new SolidColorBrush(Color.FromArgb(0x59, chipColor.R, chipColor.G, chipColor.B));
+            iconChip.BorderThickness = new Thickness(1);
+
             TextBlock iconBlock = new TextBlock();
             iconBlock.Text = icon;
-            iconBlock.FontSize = 13;
-            iconBlock.Margin = new Thickness(0, 0, 8, 0);
+            iconBlock.FontSize = 14;
+            iconBlock.HorizontalAlignment = HorizontalAlignment.Center;
             iconBlock.VerticalAlignment = VerticalAlignment.Center;
-            titleRow.Children.Add(iconBlock);
+            iconChip.Child = iconBlock;
+
+            titleRow.Children.Add(iconChip);
 
             TextBlock title = new TextBlock();
             title.Text = name;
@@ -1315,9 +1446,11 @@ namespace OmniClean {
             grid.Children.Add(sp);
 
             Border badge = new Border();
-            badge.Background = new SolidColorBrush(Color.FromRgb(0x16, 0x21, 0x36));
-            badge.Padding = new Thickness(10, 4, 10, 4);
-            badge.CornerRadius = new CornerRadius(6);
+            badge.Background = new SolidColorBrush(Color.FromRgb(0x15, 0x1F, 0x35));
+            badge.BorderBrush = new SolidColorBrush(Color.FromRgb(0x27, 0x36, 0x57));
+            badge.BorderThickness = new Thickness(1);
+            badge.Padding = new Thickness(11, 4, 11, 4);
+            badge.CornerRadius = new CornerRadius(11);
             badge.VerticalAlignment = VerticalAlignment.Center;
 
             TextBlock txtBadge = new TextBlock();
@@ -1807,20 +1940,20 @@ namespace OmniClean {
 
             foreach (var item in filtered) {
                 Border card = new Border();
-                card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                card.Background = CardBgBrush();
+                card.BorderBrush = CardBorderBrush();
                 card.BorderThickness = new Thickness(1);
                 card.Padding = new Thickness(14, 10, 14, 10);
                 card.Margin = new Thickness(0, 0, 0, 7);
                 card.CornerRadius = new CornerRadius(10);
 
                 card.MouseEnter += (s, e) => {
-                    card.Background = new SolidColorBrush(Color.FromRgb(0x15, 0x1F, 0x34));
-                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                    card.Background = CardHoverBrush();
+                    card.BorderBrush = CardHoverBorderBrush();
                 };
                 card.MouseLeave += (s, e) => {
-                    card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                    card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                    card.Background = CardBgBrush();
+                    card.BorderBrush = CardBorderBrush();
                 };
 
                 Grid grid = new Grid();
@@ -1873,8 +2006,10 @@ namespace OmniClean {
 
                 Border sizeBadge = new Border();
                 sizeBadge.Background = new SolidColorBrush(Color.FromRgb(0x23, 0x1B, 0x4D));
+                sizeBadge.BorderBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x3F, 0x9E));
+                sizeBadge.BorderThickness = new Thickness(1);
                 sizeBadge.Padding = new Thickness(10, 4, 10, 4);
-                sizeBadge.CornerRadius = new CornerRadius(6);
+                sizeBadge.CornerRadius = new CornerRadius(11);
                 sizeBadge.Margin = new Thickness(0, 0, 8, 0);
 
                 TextBlock txtSize = new TextBlock();
@@ -1885,6 +2020,7 @@ namespace OmniClean {
                 sizeBadge.Child = txtSize;
 
                 Button btnShow = new Button();
+                btnShow.Style = (Style)mainWindow.TryFindResource("SecondaryBtn");
                 btnShow.Content = "Open Folder";
                 btnShow.Background = new SolidColorBrush(Color.FromRgb(0x16, 0x20, 0x32));
                 btnShow.Foreground = new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1));
@@ -1899,6 +2035,7 @@ namespace OmniClean {
                 };
 
                 Button btnDeleteFile = new Button();
+                btnDeleteFile.Style = (Style)mainWindow.TryFindResource("SecondaryBtn");
                 btnDeleteFile.Content = "Delete";
                 btnDeleteFile.Background = new SolidColorBrush(Color.FromRgb(0x3B, 0x18, 0x22));
                 btnDeleteFile.Foreground = new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
@@ -2022,8 +2159,8 @@ namespace OmniClean {
 
                     foreach (var group in matchedGroups) {
                         Border groupBorder = new Border();
-                        groupBorder.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                        groupBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                        groupBorder.Background = CardBgBrush();
+                        groupBorder.BorderBrush = CardBorderBrush();
                         groupBorder.BorderThickness = new Thickness(1);
                         groupBorder.Padding = new Thickness(14);
                         groupBorder.Margin = new Thickness(0, 0, 0, 10);
@@ -2062,6 +2199,7 @@ namespace OmniClean {
                             itemGrid.Children.Add(itemPath);
 
                             Button btnDel = new Button();
+                            btnDel.Style = (Style)mainWindow.TryFindResource("SecondaryBtn");
                             btnDel.Content = (i == 0 ? "Reveal" : "Delete");
                             btnDel.Background = (i == 0) ? new SolidColorBrush(Color.FromRgb(0x16, 0x20, 0x32)) : new SolidColorBrush(Color.FromRgb(0x3B, 0x18, 0x22));
                             btnDel.Foreground = (i == 0) ? new SolidColorBrush(Color.FromRgb(0xCB, 0xD5, 0xE1)) : new SolidColorBrush(Color.FromRgb(0xF8, 0x71, 0x71));
@@ -2179,20 +2317,20 @@ namespace OmniClean {
 
                     foreach (var app in list) {
                         Border card = new Border();
-                        card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                        card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                        card.Background = CardBgBrush();
+                        card.BorderBrush = CardBorderBrush();
                         card.BorderThickness = new Thickness(1);
                         card.Padding = new Thickness(14, 10, 14, 10);
                         card.Margin = new Thickness(0, 0, 0, 8);
                         card.CornerRadius = new CornerRadius(10);
 
                         card.MouseEnter += (s, e) => {
-                            card.Background = new SolidColorBrush(Color.FromRgb(0x15, 0x1F, 0x34));
-                            card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x3B, 0x82, 0xF6));
+                            card.Background = CardHoverBrush();
+                            card.BorderBrush = CardHoverBorderBrush();
                         };
                         card.MouseLeave += (s, e) => {
-                            card.Background = new SolidColorBrush(Color.FromRgb(0x0C, 0x12, 0x22));
-                            card.BorderBrush = new SolidColorBrush(Color.FromRgb(0x1B, 0x25, 0x3B));
+                            card.Background = CardBgBrush();
+                            card.BorderBrush = CardBorderBrush();
                         };
 
                         Grid grid = new Grid();

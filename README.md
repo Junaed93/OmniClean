@@ -1,6 +1,6 @@
 # OmniClean
 
-Version: 1.0.1
+Version: 1.0.3
 Universal Windows Storage Optimizer and Performance Utility.
 
 OmniClean is a native, lightweight Windows desktop application engineered to inspect system drives, reclaim disk space from redundant caches, discover large or duplicate files, trim idle memory working sets, and optimize overall system responsiveness. It ships as a single standalone executable with zero external runtime dependencies (native edition), plus an optional local web edition.
